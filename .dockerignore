@@ -1,0 +1,45 @@
+# 构建产物（镜像内会重新编译，拷进去只会拖慢构建并可能污染 target）
+target/
+build/
+out/
+*.jar
+*.war
+*.class
+
+# 运行时数据：含真实 API Key / 口令哈希，绝不能烘进镜像层
+# （镜像层是明文可提取的，即使后续 rm 掉也会留在历史层里）
+data/
+logs/
+
+# 版本控制与 IDE
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# 文档与本地配置
+README.md
+*.md
+.env
+.env.*
+application-local.yml
+application-prod.yml
+
+# 容器自身文件
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# 工具与临时文件
+.workbuddy/
+.mvn/
+*.tmp
+*.bak
+*.log
+.DS_Store
+Thumbs.db

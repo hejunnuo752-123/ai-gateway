@@ -83,6 +83,45 @@ ai-gateway:
       supports-vision: true
 ```
 
+## Docker 部署
+
+```bash
+# 准备运行时配置（会绑定挂载进容器）
+mkdir -p data logs
+cp data/providers.json.example data/providers.json
+cp data/groups.json.example   data/groups.json
+
+docker compose up -d --build
+docker compose logs -f          # 查看启动日志与默认管理员口令
+```
+
+访问 `http://<宿主机IP>:8822`。
+
+也可以不用 compose：
+
+```bash
+docker build -t ai-gateway:1.0.0 .
+docker run -d --name ai-gateway \
+  -p 8822:8822 \
+  -v "$PWD/data:/app/data" \
+  -v "$PWD/logs:/app/logs" \
+  -e TZ=Asia/Shanghai \
+  ai-gateway:1.0.0
+```
+
+镜像要点：
+
+| 项 | 说明 |
+| --- | --- |
+| 构建 | 多阶段，`maven:3.9-eclipse-temurin-17` 编译 → `eclipse-temurin:17-jre-alpine` 运行 |
+| 卷 | `/app/data`（供应商、资源组、用户、背景图）与 `/app/logs` 必须挂载，否则重建容器丢配置 |
+| 用户 | 以非 root `appuser`(uid 1000) 运行 |
+| 健康检查 | `curl /login`（该路径在鉴权白名单内，未登录返回 200） |
+| 内存 | `-XX:MaxRAMPercentage=75`，跟随容器 limit 自动伸缩，不写死 `-Xmx` |
+| 端口/数据目录 | 通过 `SERVER_PORT`、`AI_GATEWAY_DATA_DIR` 环境变量覆盖 |
+
+宿主机挂载目录的属主需允许 uid 1000 写入。若遇权限报错：`sudo chown -R 1000:1000 data logs`。
+
 ## 安全说明
 
 以下文件包含密钥与口令哈希，已通过 `.gitignore` 排除，**请勿提交到任何公开仓库**：

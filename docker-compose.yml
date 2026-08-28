@@ -1,0 +1,46 @@
+services:
+  ai-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-gateway:1.0.0
+    container_name: ai-gateway
+    restart: unless-stopped
+
+    ports:
+      # 宿主机端口:容器端口。只想本机访问可改为 "127.0.0.1:8822:8822"
+      - "8822:8822"
+
+    environment:
+      TZ: Asia/Shanghai
+      # 这两个变量由 ENTRYPOINT 转成 --server.port / --ai-gateway.data-dir 命令行参数
+      SERVER_PORT: 8822
+      AI_GATEWAY_DATA_DIR: /app/data
+      JAVA_OPTS: >-
+        -XX:MaxRAMPercentage=75
+        -XX:+UseContainerSupport
+        -Dfile.encoding=UTF-8
+
+    volumes:
+      # 绑定挂载到宿主机目录，方便直接编辑 providers.json / groups.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+    # 容器内 JSON 文件读写为主，内存占用不高；按需调整
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8822/login"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
