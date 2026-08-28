@@ -1,0 +1,66 @@
+# ---------- 构建产物 ----------
+target/
+*.jar
+*.war
+*.class
+build/
+out/
+dist/
+
+# ---------- Maven ----------
+.mvn/wrapper/maven-wrapper.jar
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+dependency-reduced-pom.xml
+
+# ---------- 日志 ----------
+logs/
+*.log
+*.log.*
+
+# ---------- 运行时数据（含密钥 / 口令哈希，禁止入库） ----------
+data/providers.json
+data/groups.json
+data/group-members.json
+data/users.json
+data/settings.json
+
+# 用户上传的背景图（体积大且属于运行时内容）
+data/backgrounds/
+
+# ---------- 环境与密钥 ----------
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+application-local.yml
+application-local.yaml
+application-local.properties
+application-prod.yml
+
+# ---------- IDE ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+nbproject/
+
+# ---------- 系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 临时文件 ----------
+*.tmp
+*.bak
+*.swp
+*~

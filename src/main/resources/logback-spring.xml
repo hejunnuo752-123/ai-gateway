@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ========== 控制台输出（保持原有行为） ========== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========== 模��转发日志 → 文件 ==========
+         记录所有 [ROUTE] / [FWD] / [FWD-STREAM] 轮询调用详情：
+         - 路由匹配了哪些平台
+         - 每个平台的调用尝试（成功 / 失败）
+         - 错误原因
+    -->
+    <appender name="FORWARD_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/ai-gateway-forward.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 每天或超过 10MB 滚动 -->
+            <fileNamePattern>logs/ai-gateway-forward.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <!-- [g=xxx] 为资源池分组标识，取自 MDC；旧 /v1/** 链路无分组上下文时输出 [g=-] -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [g=%X{groupKey:--}] - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========== 错误日志单独文件（WARN 及以上） ========== -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/ai-gateway-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/ai-gateway-error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ========== 日志级别配置 ========== -->
+    <!-- ChatForwardService：转发轮询日志同时输出到控制台 + 转发日志文件 -->
+    <logger name="com.aigateway.service.ChatForwardService" level="INFO" additivity="true">
+        <appender-ref ref="FORWARD_FILE"/>
+    </logger>
+
+    <!-- 分组链路：路由解析 / OpenAI 入口 / Anthropic 入口 的日志同样进转发日志文件，
+         这样管理页右侧那块面板能看到新旧两条链路的全部调用记录 -->
+    <logger name="com.aigateway.service.GroupRouteService" level="INFO" additivity="true">
+        <appender-ref ref="FORWARD_FILE"/>
+    </logger>
+    <logger name="com.aigateway.controller.GroupChatController" level="INFO" additivity="true">
+        <appender-ref ref="FORWARD_FILE"/>
+    </logger>
+    <logger name="com.aigateway.controller.GroupAnthropicController" level="INFO" additivity="true">
+        <appender-ref ref="FORWARD_FILE"/>
+    </logger>
+
+    <!-- 根日志：控制台 + 错误文件 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+</configuration>

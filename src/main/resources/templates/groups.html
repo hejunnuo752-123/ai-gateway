@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Gateway - 资源池分组</title>
+    <link href="/js/bootstrap.min.css?v=2" rel="stylesheet">
+    <link href="/js/bootstrap-icons.css?v=2" rel="stylesheet">
+    <style>
+        [v-cloak] { display: none !important; }
+        .vue-error { color: #ff5252; padding: 20px; text-align: center; }
+        :root {
+            --bg-dark: #05070a;
+            --neon-blue: #00f0ff;
+            --neon-purple: #a855f7;
+            --neon-green: #00e676;
+            --neon-red: #ff5252;
+            --neon-orange: #ffab40;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 240, 255, 0.18);
+        }
+        * { scrollbar-width: thin; scrollbar-color: rgba(0,240,255,0.25) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.25); border-radius: 3px; }
+        html, body {
+            margin: 0; height: 100vh; background: #020810; color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+        .bg-img { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+
+        .app-sidebar {
+            width: 48px; height: 100vh; background: rgba(8, 16, 30, 0.18);
+            border-right: 1px solid rgba(0, 240, 255, 0.14);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 14px 0; gap: 8px; z-index: 20; box-shadow: 2px 0 24px rgba(0,0,0,0.12);
+        }
+        .sidebar-logo {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: #fff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3); margin-bottom: 16px;
+        }
+        .sidebar-icon {
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: #4a6572; cursor: pointer;
+            transition: all 0.2s; position: relative; text-decoration: none;
+        }
+        .sidebar-icon:hover { color: var(--neon-blue); background: rgba(0,240,255,0.08); }
+        .sidebar-icon.active {
+            color: var(--neon-blue); background: rgba(0,240,255,0.12);
+            box-shadow: inset 0 0 8px rgba(0,240,255,0.15);
+        }
+        .sidebar-icon.active::after {
+            content: ''; position: absolute; left: -7px; top: 8px; bottom: 8px;
+            width: 3px; background: var(--neon-blue); border-radius: 0 3px 3px 0;
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+        .sidebar-spacer { flex: 1; }
+        .sidebar-logout:hover { color: var(--neon-red) !important; }
+
+        .app-wrapper { display: flex; height: 100vh; position: relative; z-index: 1; }
+        .dashboard {
+            flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+            gap: 16px; padding: 16px; box-sizing: border-box; height: 100vh; overflow: hidden;
+        }
+        @media (max-width: 991.98px) {
+            .app-sidebar { display: none; }
+            .dashboard { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; overflow: auto; }
+        }
+
+        .panel {
+            background: rgba(10, 18, 32, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.14);
+            border-radius: 16px; box-shadow: 0 4px 32px rgba(0,0,0,0.22);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+        .panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent); opacity: 0.6;
+        }
+        .panel::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent); opacity: 0.4;
+        }
+        .panel-header {
+            padding: 16px 20px; border-bottom: 1px solid rgba(0,240,255,0.1);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-title {
+            font-size: 1.05rem; font-weight: 700; color: #fff;
+            display: flex; align-items: center; gap: 8px; text-shadow: 0 1px 5px rgba(0,0,0,0.65);
+        }
+        .panel-title i { color: var(--neon-blue); }
+
+        .module-header { padding: 18px 20px 12px; border-bottom: 1px solid rgba(0,240,255,0.1); position: relative; }
+        .module-header-inner { display: flex; justify-content: space-between; align-items: flex-start; }
+        .module-title { font-size: 1.15rem; font-weight: 700; color: #e0f7ff; text-shadow: 0 1px 6px rgba(0,0,0,0.7); }
+        .module-subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+        .module-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        .btn-glow {
+            background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue);
+            border-radius: 20px; padding: 5px 14px; font-size: 0.8rem; transition: all 0.2s;
+            box-shadow: 0 0 8px rgba(0,240,255,0.15); cursor: pointer; white-space: nowrap;
+        }
+        .btn-glow:hover { background: rgba(0,240,255,0.12); box-shadow: 0 0 16px rgba(0,240,255,0.35); color: #fff; }
+        .btn-primary-glow {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            border: none; color: #000; border-radius: 20px; padding: 5px 14px;
+            font-size: 0.8rem; font-weight: 600; transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0,240,255,0.3); cursor: pointer; white-space: nowrap;
+        }
+        .btn-primary-glow:hover { box-shadow: 0 0 20px rgba(0,240,255,0.5); transform: translateY(-1px); }
+        .btn-mini {
+            background: transparent; border: 1px solid rgba(0,240,255,0.25);
+            color: var(--text-muted); border-radius: 8px; padding: 2px 9px;
+            font-size: 0.7rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-mini:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .btn-mini:disabled {
+            opacity: 0.45; cursor: not-allowed;
+            border-color: rgba(0,240,255,0.12); color: #3f4a5a;
+        }
+        /* 必需：不写这条，上面的 :hover 会覆盖禁用态的灰化 */
+        .btn-mini:disabled:hover { border-color: rgba(0,240,255,0.12); color: #3f4a5a; }
+
+        .group-list { overflow-y: auto; padding: 12px 16px; flex: 1; }
+        .group-card {
+            background: rgba(15, 23, 42, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.12);
+            border-radius: 14px; padding: 12px 16px; margin-bottom: 10px;
+            cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+        }
+        .group-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--neon-blue); opacity: 0; transition: opacity 0.25s;
+        }
+        .group-card:hover {
+            background: rgba(15, 28, 50, 0.6); border-color: rgba(0,240,255,0.35);
+            box-shadow: 0 0 24px rgba(0,240,255,0.12);
+        }
+        .group-card:hover::before { opacity: 1; }
+        .group-card.active {
+            background: rgba(15, 28, 50, 0.65); border-color: rgba(0,240,255,0.5);
+            box-shadow: 0 0 28px rgba(0,240,255,0.16), inset 0 0 24px rgba(0,240,255,0.04);
+        }
+        .group-card.active::before { opacity: 1; }
+        .group-card.disabled { opacity: 0.55; }
+
+        .group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .group-name { font-weight: 700; color: #fff; font-size: 0.95rem; }
+        .group-actions { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; }
+        .group-route { color: var(--text-muted); font-size: 0.72rem; font-family: 'SF Mono', monospace; }
+
+        .badge-neon { font-size: 0.62rem; padding: 2px 7px; border-radius: 10px; border: 1px solid; font-weight: 500; line-height: 1.5; }
+        .badge-key { color: var(--neon-blue); border-color: rgba(0,240,255,0.35); background: rgba(0,240,255,0.08); font-family: 'SF Mono', monospace; }
+        .badge-normal { color: var(--neon-green); border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.08); }
+        .badge-error { color: var(--neon-red); border-color: rgba(255,82,82,0.4); background: rgba(255,82,82,0.08); }
+        .badge-unknown { color: var(--text-muted); border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.06); }
+        .badge-status { color: var(--neon-purple); border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.06); }
+        .badge-model { color: var(--neon-orange); border-color: rgba(255,171,64,0.3); background: rgba(255,171,64,0.06); }
+
+        .member-box { margin-top: 10px; border-top: 1px solid rgba(0,240,255,0.12); padding-top: 8px; }
+        .member-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.78rem; }
+        .member-order {
+            width: 20px; flex-shrink: 0; color: var(--text-muted);
+            font-family: 'SF Mono', monospace; font-size: 0.72rem; text-align: center;
+        }
+        .member-name { color: var(--neon-purple); font-weight: 600; }
+        .member-model { color: var(--text-muted); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .member-right { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .member-empty { color: var(--text-muted); font-size: 0.75rem; padding: 6px 0; }
+
+        .log-toolbar { display: flex; align-items: center; gap: 10px; }
+        .switch-label { color: var(--text-muted); font-size: 0.78rem; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; margin: 0; }
+        .switch-label input { display: none; }
+        .switch-box { width: 36px; height: 18px; background: rgba(255,255,255,0.1); border-radius: 9px; position: relative; transition: all 0.2s; }
+        .switch-box::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+            border-radius: 50%; background: #fff; transition: all 0.2s;
+        }
+        .switch-label input:checked + .switch-box { background: var(--neon-green); }
+        .switch-label input:checked + .switch-box::after { left: 20px; }
+
+        .log-body {
+            flex: 1; overflow-y: auto; padding: 14px 20px;
+            font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.8rem;
+            line-height: 1.6; text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+        }
+        .log-empty { color: var(--text-muted); text-align: center; padding-top: 80px; }
+        .log-group { margin-bottom: 12px; }
+        .log-time { color: var(--neon-blue); opacity: 0.85; margin-bottom: 3px; font-size: 0.78rem; }
+        .log-entry { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+        .log-arrow { color: var(--neon-green); flex-shrink: 0; font-size: 0.75rem; }
+        .log-arrow.error { color: var(--neon-red); }
+        .log-arrow.pending { color: var(--neon-orange); }
+        .log-arrow.completed { color: var(--neon-blue); }
+        .log-content { color: var(--text-main); font-size: 0.78rem; }
+        .log-content .provider { color: var(--neon-purple); font-weight: 600; }
+        .log-content .model { color: var(--neon-blue); }
+        .log-content .metric { color: var(--neon-green); }
+        .log-content .metric.error { color: var(--neon-red); }
+        .log-content .metric.completed { color: var(--neon-blue); }
+
+        .gbadge {
+            display: inline-block; font-size: 0.66rem; padding: 0 6px;
+            border-radius: 4px; margin-right: 5px; font-weight: 600;
+            font-family: 'SF Mono', monospace; border: 1px solid transparent;
+            vertical-align: 1px;
+        }
+        .gbadge-legacy { color: #c8d2dc; background: rgba(148,163,184,0.16); border-color: rgba(148,163,184,0.3); }
+        .gbadge-c0 { color: #7fd8ff; background: rgba(0,160,255,0.16); border-color: rgba(0,160,255,0.4); }
+        .gbadge-c1 { color: #d7b3ff; background: rgba(168,85,247,0.16); border-color: rgba(168,85,247,0.4); }
+        .gbadge-c2 { color: #8affc4; background: rgba(0,230,118,0.14); border-color: rgba(0,230,118,0.35); }
+        .gbadge-c3 { color: #ffd08a; background: rgba(255,171,64,0.16); border-color: rgba(255,171,64,0.4); }
+        .gbadge-c4 { color: #ff9d9d; background: rgba(255,82,82,0.14); border-color: rgba(255,82,82,0.35); }
+
+        .modal-content {
+            background: rgba(8, 18, 32, 0.95);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(0, 240, 255, 0.15); color: var(--text-main);
+        }
+        .modal-header { border-bottom: 1px solid rgba(0,240,255,0.12); }
+        .modal-footer { border-top: 1px solid rgba(0,240,255,0.12); }
+        .form-label { color: var(--text-muted); font-size: 0.85rem; }
+        .btn-close { filter: invert(1); }
+        .neon-input {
+            background: rgba(10, 18, 34, 0.72) !important;
+            border: 1px solid rgba(0, 240, 255, 0.25) !important;
+            color: #e0f7ff !important; border-radius: 10px;
+            padding: 6px 12px; font-size: 0.82rem; transition: all 0.2s; width: 100%;
+        }
+        .neon-input:focus {
+            background: rgba(12, 24, 44, 0.85) !important;
+            border-color: var(--neon-blue) !important;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.22); outline: none;
+        }
+        .neon-select {
+            background: rgba(10, 18, 34, 0.72) !important;
+            border: 1px solid rgba(0, 240, 255, 0.25) !important;
+            color: #e0f7ff !important; border-radius: 10px;
+            padding: 5px 10px; font-size: 0.78rem; cursor: pointer;
+        }
+        .neon-select option { background: #0b1424; color: #e0f7ff; }
+        .code-box {
+            background: rgba(8, 12, 28, 0.6); border: 1px solid rgba(0, 200, 255, 0.25);
+            border-radius: 8px; padding: 8px 12px; font-family: 'SF Mono', monospace;
+            font-size: 0.8rem; color: var(--neon-blue); word-break: break-all;
+        }
+        .cand-box { max-height: 320px; overflow-y: auto; }
+        .cand-row {
+            display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+            border-bottom: 1px dashed rgba(0, 200, 255, 0.15); font-size: 0.82rem;
+        }
+        .cand-row:last-child { border-bottom: none; }
+        .cand-row.picked { background: rgba(0,240,255,0.06); }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast { background: rgba(10,16,30,0.95) !important; border: 1px solid var(--border-color) !important; color: #fff !important; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; }
+        .conn-status { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .conn-connected { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        .conn-disconnected { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+        .conn-connecting { background: var(--neon-orange); box-shadow: 0 0 8px var(--neon-orange); }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <img class="bg-img" th:src="${bgUrl}" src="/images/platform-bg.jpg" alt="">
+
+    <div class="app-wrapper">
+        <nav class="app-sidebar">
+            <div class="sidebar-logo" title="AI Gateway">AI</div>
+            <a class="sidebar-icon" href="/" title="AI 资源池">
+                <i class="bi bi-grid-1x2"></i>
+            </a>
+            <a class="sidebar-icon" href="/ai-platforms" title="AI 平台导航">
+                <i class="bi bi-window"></i>
+            </a>
+            <a class="sidebar-icon active" href="/groups" title="资源池分组">
+                <i class="bi bi-diagram-3"></i>
+            </a>
+            <a class="sidebar-icon" @click.prevent="void(0)" title="功能模块三">
+                <i class="bi bi-graph-up"></i>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <a class="sidebar-icon" onclick="openSettingsModal()" title="设置">
+                <i class="bi bi-gear"></i>
+            </a>
+            <a class="sidebar-icon sidebar-logout" @click="doLogout" title="退出登录">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </nav>
+
+        <div class="dashboard">
+            <!-- 左栏：分组管理 -->
+            <section class="panel">
+                <div class="module-header">
+                    <div class="module-header-inner">
+                        <div>
+                            <div class="module-title">资源池分组</div>
+                            <div class="module-subtitle">
+                                {{ groups.length }} 个分组 · {{ totalBindings }} 个平台绑定 · 每组一条独立路由与密钥
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <button class="btn-glow" @click="openCreateGroup">
+                                <i class="bi bi-plus-lg me-1"></i>新建分组
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="group-list">
+                    <div v-if="groups.length === 0" class="empty-state">
+                        <i class="bi bi-diagram-3"></i>
+                        <p>还没有创建任何分组</p>
+                        <button class="btn-primary-glow" @click="openCreateGroup">创建第一个分组</button>
+                    </div>
+                    <div v-for="g in groups" :key="g.id"
+                         :class="['group-card', selectedGroupId === g.id ? 'active' : '', g.status !== 'ACTIVE' ? 'disabled' : '']"
+                         @click="selectGroup(g)">
+                        <div class="group-head">
+                            <span class="gbadge" :class="badgeClassFor(g.groupKey)">{{ g.groupKey }}</span>
+                            <span class="group-name">{{ g.name }}</span>
+                            <span class="badge-neon" :class="g.status === 'ACTIVE' ? 'badge-normal' : 'badge-unknown'">
+                                {{ g.status }}
+                            </span>
+                            <div class="group-actions">
+                                <button class="btn btn-link btn-sm text-info p-0" @click.stop="openConnInfo(g)" title="接入信息">
+                                    <i class="bi bi-key" style="font-size:0.95rem;"></i>
+                                </button>
+                                <button class="btn btn-link btn-sm text-info p-0 ms-1" @click.stop="openEditGroup(g)" title="编辑">
+                                    <i class="bi bi-pencil-square" style="font-size:0.95rem;"></i>
+                                </button>
+                                <button class="btn btn-link btn-sm text-danger p-0 ms-1" @click.stop="removeGroup(g)"
+                                        :disabled="g.groupKey === 'default'" title="删除">
+                                    <i class="bi bi-trash" style="font-size:0.95rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="group-route">/g/{{ g.groupKey }}/v1 · {{ g.maskedApiKey }}</div>
+                        <div class="mt-2 d-flex flex-wrap gap-1">
+                            <span v-for="m in g.virtualModels" :key="m" class="badge-neon badge-model">{{ m }}</span>
+                            <span v-if="!g.virtualModels || g.virtualModels.length === 0" class="badge-neon badge-unknown">
+                                未限制虚拟模型
+                            </span>
+                        </div>
+
+                        <div class="member-box" v-if="selectedGroupId === g.id">
+                            <div class="d-flex align-items-center mb-1">
+                                <span style="font-size:0.74rem;color:var(--text-muted);">
+                                    组内平台 {{ g.members.length }} 个 · 序号为组内独立轮询顺序
+                                </span>
+                                <button class="btn-mini ms-auto" @click.stop="openBindDialog(g)">管理绑定平台</button>
+                            </div>
+                            <div v-if="g.members.length === 0" class="member-empty">
+                                尚未绑定平台，该路由调用会返回 404
+                            </div>
+                            <div v-for="(m, mi) in g.members" :key="m.memberId" class="member-row">
+                                <span class="member-order">{{ m.orderInGroup }}</span>
+                                <span class="member-name">{{ m.providerName }}</span>
+                                <span class="member-model" :title="m.selectedModel">{{ m.selectedModel || '—' }}</span>
+                                <div class="member-right">
+                                    <button class="btn-mini" @click.stop="moveMember(g, mi, -1)" :disabled="mi === 0" title="上移">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                    <button class="btn-mini" @click.stop="moveMember(g, mi, 1)"
+                                            :disabled="mi === g.members.length - 1" title="下移">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                    <span class="badge-neon" :class="healthBadgeClass(m.healthStatus)">
+                                        {{ healthLabel(m.healthStatus) }}
+                                    </span>
+                                    <button class="btn-mini" @click.stop="toggleMember(g, m)"
+                                            :title="m.enabled ? '组内禁用' : '组内启用'">
+                                        {{ m.enabled ? '启用中' : '已禁用' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 右栏：实时调用日志（与首页同源，全量不过滤） -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="bi bi-broadcast"></i>实时调用日志</div>
+                    <div class="log-toolbar">
+                        <select class="neon-select" v-model="logFilter" title="仅过滤已接收的日志，不影响推送">
+                            <option value="all">全部来源</option>
+                            <option value="-">仅旧链路</option>
+                            <option v-for="g in groups" :key="g.id" :value="g.groupKey">仅 {{ g.groupKey }}</option>
+                        </select>
+                        <span class="small" :title="logStatusText">
+                            <span class="conn-status" :class="connClass"></span>
+                            <span class="text-muted" style="font-size:0.75rem;">{{ logStatus }}</span>
+                        </span>
+                        <label class="switch-label">
+                            <input type="checkbox" v-model="autoScroll" />
+                            <span class="switch-box"></span>
+                            自动滚动
+                        </label>
+                        <button class="btn btn-sm btn-outline-info" @click="clearLogs" style="border-radius:12px;font-size:0.72rem;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="log-body" ref="logBody">
+                    <div v-if="visibleEntries.length === 0" class="log-empty">
+                        <i class="bi bi-journal-text" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                        等待日志数据...
+                    </div>
+                    <div v-for="(group, idx) in groupedLogs" :key="idx" class="log-group">
+                        <div class="log-time">[ {{ group.time }} ]</div>
+                        <div v-for="(entry, eidx) in group.entries" :key="eidx" class="log-entry">
+                            <i class="bi bi-chevron-right log-arrow" :class="entry.type"></i>
+                            <div class="log-content">
+                                <span class="gbadge" :class="badgeClassFor(entry.groupKey)">{{ badgeTextFor(entry.groupKey) }}</span>
+                                <span v-if="entry.provider" class="provider">{{ entry.provider }}</span>
+                                <span v-if="entry.model"> | <span class="model">{{ entry.model }}</span></span>
+                                <span v-if="entry.duration != null"> | 耗时 <span class="metric" :class="entry.type">{{ entry.duration }}ms</span></span>
+                                <span v-if="entry.tokens != null"> | token <span class="metric">{{ entry.tokens }}</span></span>
+                                <span v-if="entry.status"> | <span class="metric" :class="entry.type">{{ entry.status }}</span></span>
+                                <span v-if="entry.raw && !entry.provider">{{ entry.raw }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 分组编辑弹窗 -->
+    <div class="modal fade" id="groupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingGroup ? '编辑分组' : '新建分组' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">路由标识 groupKey</label>
+                        <input class="neon-input" v-model="form.groupKey"
+                               :disabled="editingGroup && editingGroup.groupKey === 'default'"
+                               placeholder="team-rd（仅小写字母、数字、连字符）">
+                        <div class="mt-1" style="font-size:0.72rem;color:var(--text-muted);">
+                            接入地址将是 <span style="color:var(--neon-blue);">/g/{{ form.groupKey || '<groupKey>' }}/v1</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">显示名</label>
+                        <input class="neon-input" v-model="form.name" placeholder="研发组">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">访问密钥 apiKey</label>
+                        <div class="d-flex gap-2">
+                            <input class="neon-input" v-model="form.apiKey"
+                                   :placeholder="editingGroup ? '留空表示不修改' : '留空则自动生成'">
+                            <button class="btn-glow" @click="genKey" style="flex-shrink:0;">生成</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">开放的虚拟模型（逗号或换行分隔，留空表示不限制）</label>
+                        <textarea class="neon-input" rows="3" v-model="form.virtualModelsText"
+                                  placeholder="claude-sonnet-4-6"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">状态</label>
+                        <select class="neon-select w-100" v-model="form.status">
+                            <option value="ACTIVE">ACTIVE（启用）</option>
+                            <option value="DISABLED">DISABLED（停用，调用返回 403）</option>
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label">备注</label>
+                        <input class="neon-input" v-model="form.remark" placeholder="可选">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button class="btn btn-primary" @click="saveGroup" :disabled="saving">
+                        {{ saving ? '保存中...' : '保存' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 接入信息弹窗 -->
+    <div class="modal fade" id="connModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">接入信息 · {{ connGroup ? connGroup.name : '' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" v-if="connGroup">
+                    <div class="mb-3">
+                        <label class="form-label">Base URL（OpenAI 兼容客户端）</label>
+                        <div class="code-box">{{ origin }}/g/{{ connGroup.groupKey }}/v1</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key</label>
+                        <div class="code-box">{{ showKey ? connGroup.apiKey : connGroup.maskedApiKey }}</div>
+                        <button class="btn-mini mt-2" @click="showKey = !showKey">
+                            {{ showKey ? '隐藏' : '显示完整密钥' }}
+                        </button>
+                        <button class="btn-mini mt-2 ms-1" @click="copyText(connGroup.apiKey)">复制</button>
+                        <button class="btn-mini mt-2 ms-1" @click="regenKey(connGroup)">重新生成</button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">可用模型</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <span v-for="m in connGroup.virtualModels" :key="m" class="badge-neon badge-model">{{ m }}</span>
+                            <span v-if="!connGroup.virtualModels || connGroup.virtualModels.length === 0"
+                                  class="badge-neon badge-unknown">未限制</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">支持的协议端点</label>
+                        <div class="code-box mb-1">GET&nbsp;&nbsp;/g/{{ connGroup.groupKey }}/v1/models</div>
+                        <div class="code-box mb-1">POST /g/{{ connGroup.groupKey }}/v1/chat/completions</div>
+                        <div class="code-box">POST /g/{{ connGroup.groupKey }}/v1/messages（Anthropic）</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 绑定平台弹窗 -->
+    <div class="modal fade" id="bindModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">管理绑定平台 · {{ bindGroup ? bindGroup.name : '' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2" style="font-size:0.76rem;color:var(--text-muted);">
+                        勾选顺序即组内轮询顺序。一个平台可同时属于多个分组，各组序号相互独立，
+                        也不会改动平台自身在首页的全局序号。
+                    </div>
+                    <div class="cand-box">
+                        <div v-for="c in candidates" :key="c.providerId"
+                             :class="['cand-row', pickedIds.includes(c.providerId) ? 'picked' : '']">
+                            <input type="checkbox" :checked="pickedIds.includes(c.providerId)"
+                                   @change="togglePick(c.providerId)">
+                            <span style="width:22px;color:var(--text-muted);font-family:monospace;font-size:0.72rem;">
+                                {{ pickedIds.indexOf(c.providerId) >= 0 ? pickedIds.indexOf(c.providerId) : '' }}
+                            </span>
+                            <span style="color:var(--neon-purple);font-weight:600;">{{ c.providerName }}</span>
+                            <span style="color:var(--text-muted);font-size:0.74rem;">{{ c.selectedModel || '—' }}</span>
+                            <span class="badge-neon" :class="healthBadgeClass(c.healthStatus)">
+                                {{ healthLabel(c.healthStatus) }}
+                            </span>
+                            <span class="ms-auto d-flex gap-1">
+                                <span v-for="b in c.belongsTo" :key="b" class="gbadge" :class="badgeClassFor(b)">{{ b }}</span>
+                            </span>
+                        </div>
+                        <div v-if="candidates.length === 0" class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>还没有任何 AI 平台，请先到首页添加</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span class="me-auto" style="font-size:0.76rem;color:var(--text-muted);">
+                        已选 {{ pickedIds.length }} 个
+                    </span>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button class="btn btn-primary" @click="saveBindings" :disabled="saving">
+                        {{ saving ? '保存中...' : '保存绑定' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container">
+        <div v-for="(t, i) in toasts" :key="i" class="toast show mb-2">
+            <div class="toast-body">{{ t }}</div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/js/vue.global.prod.js?v=2"></script>
+<script src="/js/bootstrap.bundle.min.js?v=2"></script>
+<script src="/js/settings-modal.js?v=1"></script>
+<script th:inline="none">
+window.onerror = function(msg, url, line) {
+    console.error('[APP ERROR]', msg, 'at', url, 'line', line);
+    document.body.innerHTML = '<div class="vue-error"><h3>页面加载出错</h3><p>' + msg + '</p><p>位置: ' + (url || '') + ':' + line + '</p><p>请尝试 Ctrl+F5 强制刷新</p></div>';
+};
+
+try {
+    if (typeof Vue === 'undefined') {
+        throw new Error('Vue 库未能加载，请检查静态资源 /js/vue.global.prod.js 是否可访问');
+    }
+} catch (e) {
+    document.body.innerHTML = '<div class="vue-error"><h3>Vue 加载失败</h3><p>' + e.message + '</p></div>';
+    throw e;
+}
+
+/* 会话过期兜底：任何管理接口返回 401 就回登录页，避免页面停在空白态 */
+(function () {
+    const origFetch = window.fetch;
+    window.fetch = async function (...args) {
+        const resp = await origFetch.apply(this, args);
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+        if (resp.status === 401 && url.startsWith('/api/') && !url.startsWith('/api/auth/')) {
+            window.location.href = '/login';
+        }
+        return resp;
+    };
+})();
+
+const { createApp, ref, reactive, computed, nextTick, onMounted, onUnmounted } = Vue;
+
+createApp({
+    setup() {
+        const groups = ref([]);
+        const selectedGroupId = ref(null);
+        const candidates = ref([]);
+        const pickedIds = ref([]);
+        const toasts = ref([]);
+        const saving = ref(false);
+        const showKey = ref(false);
+        const origin = window.location.origin;
+
+        const editingGroup = ref(null);
+        const connGroup = ref(null);
+        const bindGroup = ref(null);
+
+        const form = reactive({
+            groupKey: '', name: '', apiKey: '',
+            virtualModelsText: '', status: 'ACTIVE', remark: ''
+        });
+
+        let groupModal, connModal, bindModal;
+
+        // ===== 日志（与首页同一个 SSE 接口，全量推送不过滤） =====
+        const logEntries = ref([]);
+        const logFilter = ref('all');
+        const autoScroll = ref(true);
+        const logStatus = ref('连接中');
+        const logBody = ref(null);
+        let evtSource = null;
+
+        const connClass = computed(() => {
+            if (logStatus.value === '已连接') return 'conn-connected';
+            if (logStatus.value === '连接中') return 'conn-connecting';
+            return 'conn-disconnected';
+        });
+        const logStatusText = computed(() => logStatus.value);
+
+        const totalBindings = computed(() =>
+            groups.value.reduce((sum, g) => sum + (g.members ? g.members.length : 0), 0)
+        );
+
+        // 纯前端过滤，不影响 SSE 推送
+        const visibleEntries = computed(() => {
+            if (logFilter.value === 'all') return logEntries.value;
+            return logEntries.value.filter(e => (e.groupKey || '-') === logFilter.value);
+        });
+
+        const groupedLogs = computed(() => {
+            const result = [];
+            let lastTime = null;
+            let current = null;
+            for (const entry of visibleEntries.value) {
+                if (entry.time !== lastTime) {
+                    current = { time: entry.time, entries: [] };
+                    result.push(current);
+                    lastTime = entry.time;
+                }
+                current.entries.push(entry);
+            }
+            return result;
+        });
+
+        onMounted(() => {
+            groupModal = new bootstrap.Modal('#groupModal');
+            connModal = new bootstrap.Modal('#connModal');
+            bindModal = new bootstrap.Modal('#bindModal');
+            loadGroups();
+            connectLogs();
+        });
+
+        onUnmounted(() => {
+            if (evtSource) evtSource.close();
+        });
+
+        function connectLogs() {
+            if (evtSource) evtSource.close();
+            logStatus.value = '连接中';
+            evtSource = new EventSource('/api/logs/forward?lastLines=100');
+            evtSource.onopen = () => { logStatus.value = '已连接'; };
+            evtSource.onmessage = (e) => {
+                parseLogLine(e.data);
+                if (autoScroll.value) scrollToBottom();
+            };
+            evtSource.onerror = () => {
+                logStatus.value = '已断开';
+                setTimeout(connectLogs, 3000);
+            };
+        }
+
+        function parseLogLine(line) {
+            const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+            const time = tsMatch ? tsMatch[1].split(' ')[1] : '--:--:--';
+
+            // logback pattern 里的 [g=xxx]，旧链路为 [g=-]
+            const gMatch = line.match(/\[g=([^\]]+)\]/);
+            const groupKey = (gMatch && gMatch[1] !== '-') ? gMatch[1] : null;
+
+            let entry = { time, groupKey, raw: line, type: 'pending' };
+
+            const successMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] ✅ 调用成功 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\)/);
+            if (successMatch) {
+                entry = { time, groupKey, type: 'success', provider: successMatch[4], status: '调用成功' };
+            }
+
+            const okMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] ✅ 成功 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\) \| 耗时=(\d+)ms \| token=(\d+)/);
+            if (okMatch) {
+                entry = {
+                    time, groupKey, type: 'success', provider: okMatch[4],
+                    duration: parseInt(okMatch[6]), tokens: parseInt(okMatch[7]), status: '调用成功'
+                };
+            }
+
+            const completeMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] ✅任务完成 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\) \| 耗时=(\d+)ms \| token=(\d+)/);
+            if (completeMatch) {
+                entry = {
+                    time, groupKey, type: 'completed', provider: completeMatch[4],
+                    duration: parseInt(completeMatch[6]), tokens: parseInt(completeMatch[7]), status: '任务完成'
+                };
+            }
+
+            const attemptMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] 尝试 \[(\d+)\/(\d+)\] 平台=([^(,]+).*虚拟模型=([^\s]+)/);
+            if (attemptMatch) {
+                entry = { time, groupKey, type: 'pending', provider: attemptMatch[4], model: attemptMatch[5], status: '连接检测中' };
+            }
+
+            const failMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] ❌ 失败 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\): (.+)/);
+            if (failMatch) {
+                entry = { time, groupKey, type: 'error', provider: failMatch[4], status: '调用失败: ' + failMatch[6] };
+            }
+
+            const allFailMatch = line.match(/\[(FWD|FWD-STREAM|FWD-A)\] ❌ 所有 (\d+) 个平台均已尝试失败/);
+            if (allFailMatch) {
+                entry = { time, groupKey, type: 'error', status: allFailMatch[2] + ' 个平台全部失败' };
+            }
+
+            const routeMatch = line.match(/\[G-ROUTE\] 分组=([^\s]+) 虚拟模型=([^\s]+) 命中 (\d+) 个平台/);
+            if (routeMatch) {
+                entry = {
+                    time, groupKey: routeMatch[1], type: 'pending',
+                    model: routeMatch[2], status: '路由到 ' + routeMatch[3] + ' 个平台'
+                };
+            }
+
+            const healthMatch = line.match(/\[HEALTH\] 平台=([^()]+)\(id=([^)]+)\) 状态更新为 (\w+)/);
+            if (healthMatch) {
+                entry = {
+                    time, groupKey, type: healthMatch[3] === 'ERROR' ? 'error' : 'success',
+                    provider: healthMatch[1], status: '健康状态: ' + healthMatch[3]
+                };
+            }
+
+            logEntries.value.push(entry);
+            if (logEntries.value.length > 500) {
+                logEntries.value = logEntries.value.slice(logEntries.value.length - 500);
+            }
+        }
+
+        function scrollToBottom() {
+            nextTick(() => {
+                if (logBody.value) logBody.value.scrollTop = logBody.value.scrollHeight;
+            });
+        }
+
+        function clearLogs() { logEntries.value = []; }
+
+        // 组标识配色：按字符串哈希稳定取色，同一个 groupKey 永远同一个颜色
+        function badgeClassFor(groupKey) {
+            if (!groupKey || groupKey === '-') return 'gbadge-legacy';
+            let h = 0;
+            for (let i = 0; i < groupKey.length; i++) {
+                h = (h * 31 + groupKey.charCodeAt(i)) & 0x7fffffff;
+            }
+            return 'gbadge-c' + (h % 5);
+        }
+
+        function badgeTextFor(groupKey) {
+            return (!groupKey || groupKey === '-') ? '旧链路' : groupKey;
+        }
+
+        // ===== 分组数据 =====
+        async function loadGroups() {
+            const res = await fetch('/api/groups');
+            const json = await res.json();
+            if (json.code === 200) {
+                groups.value = json.data;
+                if (selectedGroupId.value && !groups.value.find(g => g.id === selectedGroupId.value)) {
+                    selectedGroupId.value = null;
+                }
+                if (!selectedGroupId.value && groups.value.length > 0) {
+                    selectedGroupId.value = groups.value[0].id;
+                }
+            } else {
+                toast(json.message || '加载分组失败');
+            }
+        }
+
+        function selectGroup(g) {
+            selectedGroupId.value = selectedGroupId.value === g.id ? null : g.id;
+        }
+
+        function toast(msg) {
+            toasts.value.push(msg);
+            setTimeout(() => toasts.value.shift(), 3000);
+        }
+
+        function healthBadgeClass(s) {
+            if (s === 'NORMAL') return 'badge-normal';
+            if (s === 'ERROR') return 'badge-error';
+            return 'badge-unknown';
+        }
+
+        function healthLabel(s) {
+            if (s === 'NORMAL') return '健康';
+            if (s === 'ERROR') return '异常';
+            return '未检测';
+        }
+
+        function openCreateGroup() {
+            editingGroup.value = null;
+            form.groupKey = ''; form.name = ''; form.apiKey = '';
+            form.virtualModelsText = 'claude-sonnet-4-6';
+            form.status = 'ACTIVE'; form.remark = '';
+            groupModal.show();
+        }
+
+        function openEditGroup(g) {
+            editingGroup.value = g;
+            form.groupKey = g.groupKey; form.name = g.name; form.apiKey = '';
+            form.virtualModelsText = (g.virtualModels || []).join('\n');
+            form.status = g.status; form.remark = g.remark || '';
+            groupModal.show();
+        }
+
+        function genKey() {
+            const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let s = 'sk-';
+            if (form.groupKey) s += form.groupKey.substring(0, 8) + '-';
+            for (let i = 0; i < 24; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+            form.apiKey = s;
+        }
+
+        async function saveGroup() {
+            if (!form.groupKey.trim()) { toast('请填写 groupKey'); return; }
+            saving.value = true;
+            try {
+                const models = form.virtualModelsText
+                    .split(/[,，\n]/).map(s => s.trim()).filter(s => s.length > 0);
+                const body = {
+                    groupKey: form.groupKey.trim(),
+                    name: form.name.trim(),
+                    apiKey: form.apiKey.trim(),
+                    virtualModels: models,
+                    status: form.status,
+                    remark: form.remark.trim()
+                };
+                const url = editingGroup.value ? '/api/groups/' + editingGroup.value.id : '/api/groups';
+                const method = editingGroup.value ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    groupModal.hide();
+                    await loadGroups();
+                    toast('保存成功');
+                } else {
+                    toast(json.message || '保存失败');
+                }
+            } finally {
+                saving.value = false;
+            }
+        }
+
+        async function removeGroup(g) {
+            if (g.groupKey === 'default') { toast('默认分组不允许删除'); return; }
+            if (!confirm('确认删除分组「' + g.name + '」？该组的路由将立即失效。')) return;
+            const res = await fetch('/api/groups/' + g.id, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.code === 200) { await loadGroups(); toast('已删除'); }
+            else toast(json.message || '删除失败');
+        }
+
+        function openConnInfo(g) {
+            connGroup.value = g;
+            showKey.value = false;
+            connModal.show();
+        }
+
+        async function regenKey(g) {
+            if (!confirm('重新生成密钥后，使用旧密钥的客户端会立即 401，确认继续？')) return;
+            const res = await fetch('/api/groups/' + g.id + '/regenerate-key', { method: 'POST' });
+            const json = await res.json();
+            if (json.code === 200) {
+                await loadGroups();
+                connGroup.value = groups.value.find(x => x.id === g.id) || null;
+                showKey.value = true;
+                toast('已重新生成密钥');
+            } else toast(json.message || '生成失败');
+        }
+
+        function copyText(text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => toast('已复制到剪贴板'));
+        }
+
+        async function openBindDialog(g) {
+            bindGroup.value = g;
+            const res = await fetch('/api/groups/provider-candidates');
+            const json = await res.json();
+            candidates.value = json.code === 200 ? json.data : [];
+            pickedIds.value = (g.members || []).map(m => m.providerId);
+            bindModal.show();
+        }
+
+        function togglePick(pid) {
+            const i = pickedIds.value.indexOf(pid);
+            if (i >= 0) pickedIds.value.splice(i, 1);
+            else pickedIds.value.push(pid);
+        }
+
+        async function saveBindings() {
+            if (!bindGroup.value) return;
+            saving.value = true;
+            try {
+                const res = await fetch('/api/groups/' + bindGroup.value.id + '/members', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ providerIds: pickedIds.value })
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    bindModal.hide();
+                    await loadGroups();
+                    toast('绑定已更新');
+                } else toast(json.message || '保存失败');
+            } finally {
+                saving.value = false;
+            }
+        }
+
+        async function moveMember(g, index, delta) {
+            const ids = g.members.map(m => m.providerId);
+            const target = index + delta;
+            if (target < 0 || target >= ids.length) return;
+            const tmp = ids[index]; ids[index] = ids[target]; ids[target] = tmp;
+            const res = await fetch('/api/groups/' + g.id + '/members/order', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ providerIds: ids })
+            });
+            const json = await res.json();
+            if (json.code === 200) await loadGroups();
+            else toast(json.message || '排序失败');
+        }
+
+        async function toggleMember(g, m) {
+            const res = await fetch('/api/groups/' + g.id + '/members/' + m.providerId
+                + '/toggle?enabled=' + (!m.enabled), { method: 'PUT' });
+            const json = await res.json();
+            if (json.code === 200) await loadGroups();
+            else toast(json.message || '操作失败');
+        }
+
+        /** 退出登录：清 Cookie 后回登录页 */
+        async function doLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) { /* 忽略网络异常，仍然跳转 */ }
+            window.location.href = '/login';
+        }
+
+        return {
+            groups, selectedGroupId, candidates, pickedIds, toasts, saving, showKey, origin,
+            editingGroup, connGroup, bindGroup, form, totalBindings,
+            logEntries, visibleEntries, groupedLogs, logFilter, autoScroll,
+            logStatus, logStatusText, connClass, logBody,
+            clearLogs, badgeClassFor, badgeTextFor,
+            selectGroup, healthBadgeClass, healthLabel,
+            openCreateGroup, openEditGroup, genKey, saveGroup, removeGroup,
+            openConnInfo, regenKey, copyText,
+            openBindDialog, togglePick, saveBindings, moveMember, toggleMember,
+            doLogout
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

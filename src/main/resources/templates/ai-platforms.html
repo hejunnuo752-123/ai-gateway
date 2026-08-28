@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Gateway - AI平台导航</title>
+    <link href="/js/bootstrap.min.css?v=2" rel="stylesheet">
+    <link href="/js/bootstrap-icons.css?v=2" rel="stylesheet">
+    <style>
+        [v-cloak] { display: none !important; }
+        .vue-error { color: #ff5252; padding: 20px; text-align: center; }
+        :root {
+            --bg-dark: #05070a;
+            --bg-panel: rgba(10, 16, 30, 0.72);
+            --neon-blue: #00f0ff;
+            --neon-purple: #a855f7;
+            --neon-green: #00e676;
+            --neon-red: #ff5252;
+            --neon-orange: #ffab40;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 240, 255, 0.18);
+        }
+
+        * { scrollbar-width: thin; scrollbar-color: rgba(0,240,255,0.25) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.25); border-radius: 3px; }
+
+        html, body {
+            margin: 0;
+            height: 100vh;
+            background: #020810;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+
+        /* ===== 背景图 ===== */
+        .bg-img {
+            position: fixed; inset: 0; z-index: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        /* ===== 侧边栏 ===== */
+        .app-sidebar {
+            width: 48px;
+            height: 100vh;
+            background: rgba(8, 16, 30, 0.18);
+            border-right: 1px solid rgba(0, 240, 255, 0.14);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 0;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 2px 0 24px rgba(0,0,0,0.12);
+        }
+        .sidebar-logo {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: #fff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+            margin-bottom: 16px;
+        }
+        .sidebar-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            color: #4a6572;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            text-decoration: none;
+        }
+        .sidebar-icon:hover { color: var(--neon-blue); background: rgba(0,240,255,0.08); }
+        .sidebar-icon.active {
+            color: var(--neon-blue);
+            background: rgba(0,240,255,0.12);
+            box-shadow: inset 0 0 8px rgba(0,240,255,0.15);
+        }
+        .sidebar-icon.active::after {
+            content: '';
+            position: absolute;
+            left: -7px; top: 8px; bottom: 8px;
+            width: 3px;
+            background: var(--neon-blue);
+            border-radius: 0 3px 3px 0;
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+        .sidebar-spacer { flex: 1; }
+        .sidebar-logout:hover { color: var(--neon-red) !important; }
+
+        /* ===== 布局（全宽单列） ===== */
+        .app-wrapper {
+            display: flex;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        .main-content {
+            flex: 1;
+            padding: 16px;
+            box-sizing: border-box;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ===== 面板 ===== */
+        .panel {
+            background: rgba(10, 18, 32, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.22);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+        }
+        .panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            opacity: 0.6;
+        }
+        .panel::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+            opacity: 0.4;
+        }
+
+        /* ===== 模块头部 ===== */
+        .module-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0,240,255,0.1);
+        }
+        .module-header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .module-title { font-size: 1.15rem; font-weight: 700; color: #e0f7ff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+        .module-subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+        .module-stats { font-size: 0.72rem; color: var(--text-muted); }
+
+        /* ===== 平台卡片列表 ===== */
+        .platform-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 10px;
+        }
+        .platform-card {
+            background: rgba(15, 23, 42, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.12);
+            border-radius: 14px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            flex: 0 1 calc(33.333% - 7px);
+            min-width: 220px;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .platform-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 12px; bottom: 12px;
+            width: 3px;
+            background: var(--neon-blue);
+            border-radius: 0 3px 3px 0;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .platform-card:hover {
+            border-color: rgba(0,240,255,0.4);
+            box-shadow: 0 0 18px rgba(0,240,255,0.12);
+            transform: translateX(3px);
+        }
+        .platform-card:hover::before { opacity: 1; }
+        .platform-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .platform-logo {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(0,240,255,0.15), rgba(168,85,247,0.15));
+            border: 1px solid rgba(0,240,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--neon-blue);
+            flex-shrink: 0;
+        }
+        .platform-name {
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.95rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            margin-left: 10px;
+        }
+        .platform-url-text {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .platform-desc {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .platform-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+        .platform-arrow {
+            font-size: 0.9rem;
+            color: var(--neon-blue);
+            opacity: 0.5;
+            transition: opacity 0.25s;
+        }
+        .platform-card:hover .platform-arrow { opacity: 1; }
+
+        /* ===== 徽章 ===== */
+        .badge-neon {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            border: 1px solid;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .badge-ai { color: #38bdf8; border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.08); }
+        .badge-video { color: #a855f7; border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.08); }
+        .badge-idea { color: #00e676; border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.08); }
+        .badge-client { color: #ffab40; border-color: rgba(255,171,64,0.3); background: rgba(255,171,64,0.08); }
+        .badge-default { color: #94a3b8; border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.08); }
+
+        /* ===== 按钮 ===== */
+        .btn-glow {
+            background: transparent;
+            border: 1px solid rgba(0,240,255,0.25);
+            color: var(--neon-blue);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .btn-glow:hover {
+            background: rgba(0,240,255,0.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 12px rgba(0,240,255,0.2);
+        }
+        .btn-primary-glow {
+            background: linear-gradient(135deg, rgba(0,240,255,0.2), rgba(168,85,247,0.2));
+            border: 1px solid rgba(0,240,255,0.4);
+            color: #e0f7ff;
+            border-radius: 20px;
+            padding: 9px 22px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .btn-primary-glow:hover {
+            box-shadow: 0 0 16px rgba(0,240,255,0.25);
+        }
+
+        /* ===== Modal ===== */
+        .modal-content {
+            background: rgba(8, 14, 26, 0.95);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .modal-header { border-bottom: 1px solid rgba(0,240,255,0.1); }
+        .modal-footer { border-top: 1px solid rgba(0,240,255,0.1); }
+        .form-control, .form-select {
+            background: rgba(15,23,42,0.7);
+            border: 1px solid rgba(0,240,255,0.15);
+            color: var(--text-main);
+            border-radius: 10px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(20,30,50,0.8);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 8px rgba(0,240,255,0.15);
+            color: var(--text-main);
+        }
+        .form-label { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+        /* ===== 分类筛选下拉框 ===== */
+        .category-filter {
+            width: 150px;
+            background: rgba(10, 18, 34, 0.72) !important;
+            border: 1px solid rgba(0, 240, 255, 0.25) !important;
+            color: #e0f7ff !important;
+            border-radius: 10px;
+            padding: 6px 30px 6px 12px;
+            font-size: 0.82rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2300f0ff' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 10px center !important;
+            transition: all 0.2s;
+            box-shadow: 0 0 0 transparent;
+        }
+        .category-filter:hover {
+            border-color: rgba(0, 240, 255, 0.55) !important;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.12);
+        }
+        .category-filter:focus {
+            background: rgba(12, 24, 44, 0.85) !important;
+            border-color: var(--neon-blue) !important;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+            outline: none;
+        }
+        .category-filter option {
+            background: #0b1424;
+            color: #e0f7ff;
+        }
+
+        /* ===== Empty / Toast ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            width: 100%;
+        }
+        .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 12px; }
+        .toast-container {
+            position: fixed; top: 16px; right: 16px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast-msg {
+            background: rgba(0,240,255,0.1);
+            border: 1px solid rgba(0,240,255,0.25);
+            color: #e0f7ff;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <img class="bg-img" th:src="${bgUrl}" src="/images/platform-bg.jpg" alt="">
+
+    <div class="app-wrapper">
+        <!-- 左侧图标栏 -->
+        <nav class="app-sidebar">
+            <div class="sidebar-logo" title="AI Gateway">AI</div>
+            <a class="sidebar-icon" href="/" title="AI 平台管理">
+                <i class="bi bi-grid-1x2"></i>
+            </a>
+            <a class="sidebar-icon active" href="/ai-platforms" title="AI 平台导航">
+                <i class="bi bi-window"></i>
+            </a>
+            <a class="sidebar-icon" href="/groups" title="资源池分组">
+                <i class="bi bi-diagram-3"></i>
+            </a>
+            <a class="sidebar-icon" @click.prevent="void(0)" title="功能模块三">
+                <i class="bi bi-graph-up"></i>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <a class="sidebar-icon" @click="showConnectionInfo" title="API KEY">
+                <i class="bi bi-key"></i>
+            </a>
+            <a class="sidebar-icon" onclick="openSettingsModal()" title="设置">
+                <i class="bi bi-gear"></i>
+            </a>
+            <a class="sidebar-icon sidebar-logout" @click="doLogout" title="退出登录">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </nav>
+
+        <!-- 主内容区（全宽） -->
+        <div class="main-content">
+            <div class="panel">
+                <div class="module-header">
+                    <div class="module-header-inner">
+                        <div>
+                            <div class="module-title">AI 平台导航</div>
+                            <div class="module-subtitle">收录各类 AI 平台，点击卡片跳转至官网</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <select class="form-select form-select-sm category-filter" v-model="filterCategory">
+                                <option value="">全部分类</option>
+                                <option v-for="c in categories" :value="c">{{ c }}</option>
+                            </select>
+                            <span class="module-stats" v-if="platforms.length">共 {{ filteredPlatforms.length }} / {{ platforms.length }} 个</span>
+                            <button class="btn-glow" @click="openAdd">
+                                <i class="bi bi-plus-lg me-1"></i>添加平台
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="platform-list">
+                    <div v-if="platforms.length === 0" class="empty-state">
+                        <i class="bi bi-compass"></i>
+                        <p>还没有添加任何 AI 平台</p>
+                        <button class="btn-primary-glow" @click="openAdd">添加第一个平台</button>
+                    </div>
+                    <div v-for="p in filteredPlatforms" :key="p.id"
+                         class="platform-card"
+                         @click="openUrl(p)"
+                         :title="'点击跳转到 ' + p.name">
+                        <div class="platform-card-header">
+                            <div class="platform-logo">{{ p.name.charAt(0) }}</div>
+                            <div class="platform-name">{{ p.name }}</div>
+                            <button class="btn btn-link btn-sm text-info p-0 ms-1" @click.stop="editPlatform(p)" title="编辑">
+                                <i class="bi bi-pencil-square" style="font-size:0.9rem;"></i>
+                            </button>
+                            <button class="btn btn-link btn-sm text-danger p-0 ms-1" @click.stop="deletePlatform(p)" title="删除">
+                                <i class="bi bi-trash" style="font-size:0.9rem;"></i>
+                            </button>
+                        </div>
+                        <div class="platform-url-text" :title="p.url">{{ p.url }}</div>
+                        <div class="platform-desc" v-if="p.description">{{ p.description }}</div>
+                        <div class="platform-footer">
+                            <span :class="categoryBadge(p.category)">{{ p.category || '其他' }}</span>
+                            <span class="platform-arrow"><i class="bi bi-box-arrow-up-right"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Info Modal（复用） -->
+    <div class="modal fade" id="connectionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key me-2"></i>API KEY 获取</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Base URL</label>
+                        <div class="input-group">
+                            <input class="form-control font-monospace small" :value="connectionInfo.baseUrl" readonly ref="baseUrlInput" />
+                            <button class="btn btn-outline-secondary" @click="copyToClipboard(connectionInfo.baseUrl, 'baseUrl')" title="复制">
+                                <i :class="copied.baseUrl ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key（固定）</label>
+                        <div class="input-group">
+                            <input class="form-control font-monospace small" :value="connectionInfo.apiKey" readonly :type="showApiKey ? 'text' : 'password'" />
+                            <button class="btn btn-outline-secondary" @click="showApiKey = !showApiKey" title="显示/隐藏">
+                                <i :class="showApiKey ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" @click="copyToClipboard(connectionInfo.apiKey, 'apiKey')" title="复制">
+                                <i :class="copied.apiKey ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">客户端使用此 Base URL + API Key 即可连接网关</small>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Platform Modal -->
+    <div class="modal fade" id="platformModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editing ? '编辑平台' : '添加 AI 平台' }}</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">平台名称 *</label>
+                        <input class="form-control" v-model="form.name" placeholder="如 智谱、Gemini" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <input class="form-control" v-model="form.description" placeholder="如 需要梯子、聚合网关" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">跳转链接 *</label>
+                        <input class="form-control" v-model="form.url" placeholder="https://..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">分类标签</label>
+                        <select class="form-select" v-model="form.category">
+                            <option value="">-- 选择分类 --</option>
+                            <option v-for="c in categories" :value="c">{{ c }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">排序</label>
+                        <input class="form-control" type="number" v-model.number="form.sortOrder" min="0" placeholder="数字越小越靠前" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button class="btn btn-primary" @click="savePlatform" :disabled="saving">
+                        {{ saving ? '保存中...' : '保存' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container">
+        <div v-for="(t, i) in toasts" :key="i" class="toast-msg">{{ t }}</div>
+    </div>
+</div>
+
+<script src="/js/vue.global.prod.js?v=2"></script>
+<script src="/js/bootstrap.bundle.min.js?v=2"></script>
+<script src="/js/settings-modal.js?v=1"></script>
+<script th:inline="none">
+window.onerror = function(msg, url, line) {
+    console.error('[APP ERROR]', msg, 'at', url, 'line', line);
+    document.body.innerHTML = '<div class="vue-error"><h3>页面加载出错</h3><p>' + msg + '</p><p>位置: ' + (url || '') + ':' + line + '</p><p>请尝试 Ctrl+F5 强制刷新</p></div>';
+};
+
+try {
+    if (typeof Vue === 'undefined') {
+        throw new Error('Vue 库未能加载，请检查静态资源 /js/vue.global.prod.js 是否可访问');
+    }
+    console.log('[APP] Vue loaded:', Vue.version);
+} catch (e) {
+    document.body.innerHTML = '<div class="vue-error"><h3>Vue 加载失败</h3><p>' + e.message + '</p><p>请按 Ctrl+F5 强制刷新</p></div>';
+    throw e;
+}
+
+/* 会话过期兜底：任何管理接口返回 401 就回登录页，避免页面停在空白态 */
+(function () {
+    const origFetch = window.fetch;
+    window.fetch = async function (...args) {
+        const resp = await origFetch.apply(this, args);
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+        if (resp.status === 401 && url.startsWith('/api/') && !url.startsWith('/api/auth/')) {
+            window.location.href = '/login';
+        }
+        return resp;
+    };
+})();
+
+const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const platforms = ref([]);
+        const editing = ref(false);
+        const saving = ref(false);
+        const toasts = ref([]);
+        const showApiKey = ref(false);
+        const filterCategory = ref('');
+
+        const categories = ['AI平台官网', 'AI视频平台', 'AI IDEA', 'AI客户端'];
+
+        const filteredPlatforms = computed(() => {
+            if (!filterCategory.value) return platforms.value;
+            return platforms.value.filter(p => p.category === filterCategory.value);
+        });
+
+        const form = reactive({ name: '', description: '', url: '', category: '', sortOrder: 0 });
+        const connectionInfo = reactive({ baseUrl: '', apiKey: 'sk-vq5zqQQQxCPN3r' });
+        const copied = reactive({ baseUrl: false, apiKey: false });
+
+        let platformModal, connectionModal, editingId = null;
+
+        onMounted(() => {
+            platformModal = new bootstrap.Modal('#platformModal');
+            connectionModal = new bootstrap.Modal('#connectionModal');
+            loadPlatforms();
+        });
+
+        // ===== 数据加载 =====
+        async function loadPlatforms() {
+            try {
+                const res = await fetch('/api/ai-platforms');
+                const json = await res.json();
+                if (json.code === 200) {
+                    platforms.value = json.data;
+                }
+            } catch (e) {
+                console.error('加载平台列表失败:', e);
+            }
+        }
+
+        // ===== 操作 =====
+        function openUrl(p) {
+            if (p.url) {
+                window.open(p.url, '_blank');
+            }
+        }
+
+        function openAdd() {
+            editing.value = false;
+            editingId = null;
+            form.name = ''; form.description = ''; form.url = '';
+            form.category = ''; form.sortOrder = 0;
+            platformModal.show();
+        }
+
+        function editPlatform(p) {
+            editing.value = true;
+            editingId = p.id;
+            form.name = p.name;
+            form.description = p.description || '';
+            form.url = p.url;
+            form.category = p.category || '';
+            form.sortOrder = p.sortOrder || 0;
+            platformModal.show();
+        }
+
+        async function savePlatform() {
+            if (!form.name.trim()) { toast('请填写平台名称'); return; }
+            if (!form.url.trim()) { toast('请填写跳转链接'); return; }
+            saving.value = true;
+            try {
+                const body = {
+                    name: form.name.trim(),
+                    description: form.description.trim(),
+                    url: form.url.trim(),
+                    category: form.category || null,
+                    sortOrder: parseInt(form.sortOrder) || 0
+                };
+                let res;
+                if (editing.value && editingId) {
+                    res = await fetch(`/api/ai-platforms/${editingId}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                    });
+                } else {
+                    res = await fetch('/api/ai-platforms', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                    });
+                }
+                const json = await res.json();
+                if (json.code === 200) {
+                    platformModal.hide();
+                    await loadPlatforms();
+                    toast(editing.value ? '平台已更新' : '平台已添加');
+                } else {
+                    toast(json.message || '保存失败');
+                }
+            } catch (e) {
+                toast('保存失败: ' + e.message);
+            } finally {
+                saving.value = false;
+            }
+        }
+
+        async function deletePlatform(p) {
+            if (!confirm(`确定删除平台 "${p.name}"？`)) return;
+            const res = await fetch(`/api/ai-platforms/${p.id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.code === 200) {
+                await loadPlatforms();
+                toast('平台已删除');
+            } else {
+                toast(json.message || '删除失败');
+            }
+        }
+
+        // ===== 分类徽章 =====
+        function categoryBadge(cat) {
+            if (cat === 'AI平台官网') return 'badge-neon badge-ai';
+            if (cat === 'AI视频平台') return 'badge-neon badge-video';
+            if (cat === 'AI IDEA')  return 'badge-neon badge-idea';
+            if (cat === 'AI客户端')  return 'badge-neon badge-client';
+            return 'badge-neon badge-default';
+        }
+
+        // ===== 连接信息 =====
+        async function showConnectionInfo() {
+            connectionModal.show();
+            try {
+                const res = await fetch('/api/server-info');
+                const json = await res.json();
+                if (json && json.baseUrl) connectionInfo.baseUrl = json.baseUrl + '/v1';
+            } catch (e) {
+                connectionInfo.baseUrl = window.location.origin + '/v1';
+            }
+        }
+
+        async function copyToClipboard(text, key) {
+            try {
+                await navigator.clipboard.writeText(text);
+                copied[key] = true;
+                setTimeout(() => copied[key] = false, 2000);
+            } catch (e) {
+                const inputs = document.querySelectorAll('#connectionModal input[readonly]');
+                const el = key === 'baseUrl' ? inputs[0] : inputs[1];
+                if (el) { el.select(); document.execCommand('copy'); copied[key] = true; setTimeout(() => copied[key] = false, 2000); }
+            }
+        }
+
+        function toast(msg) {
+            toasts.value.push(msg);
+            setTimeout(() => toasts.value.shift(), 3000);
+        }
+
+        /** 退出登录：清 Cookie 后回登录页 */
+        async function doLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) { /* 忽略网络异常，仍然跳转 */ }
+            window.location.href = '/login';
+        }
+
+        return {
+            platforms, editing, saving, toasts, showApiKey,
+            filterCategory, categories, filteredPlatforms,
+            form, connectionInfo, copied,
+            openUrl, openAdd, editPlatform, savePlatform, deletePlatform,
+            categoryBadge, showConnectionInfo, copyToClipboard, doLogout
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

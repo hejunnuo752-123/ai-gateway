@@ -1,0 +1,12 @@
+[ {
+  "id" : 1,
+  "groupKey" : "default",
+  "name" : "默认组",
+  "apiKey" : "sk-REPLACE_WITH_YOUR_DOWNSTREAM_KEY",
+  "virtualModels" : [ "claude-sonnet-4-6" ],
+  "status" : "ACTIVE",
+  "sortOrder" : 0,
+  "remark" : "首次启动自动创建，虚拟模型与密钥来自 application.yml",
+  "createdAt" : null,
+  "updatedAt" : null
+} ]

@@ -1,0 +1,298 @@
+[ {
+  "id" : 1,
+  "name" : "Agnes",
+  "description" : "需要梯子",
+  "url" : "https://agnes-ai.com/campaign",
+  "category" : "AI平台官网",
+  "sortOrder" : 0,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 2,
+  "name" : "商汤科技",
+  "description" : "日日新大模型平台",
+  "url" : "https://platform.sensenova.cn/",
+  "category" : "AI平台官网",
+  "sortOrder" : 1,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 3,
+  "name" : "小米 MiMo",
+  "description" : "小米大模型平台",
+  "url" : "https://platform.xiaomimimo.com/",
+  "category" : "AI平台官网",
+  "sortOrder" : 2,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 4,
+  "name" : "Gemini",
+  "description" : "Google AI Studio，需要梯子",
+  "url" : "https://aistudio.google.com/",
+  "category" : "AI平台官网",
+  "sortOrder" : 3,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 5,
+  "name" : "Opencode Zen/GO",
+  "description" : "Openrouter，需要梯子",
+  "url" : "https://openrouter.ai/",
+  "category" : "AI平台官网",
+  "sortOrder" : 4,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 6,
+  "name" : "触站AI",
+  "description" : "AI 创作平台",
+  "url" : "https://open.czhanai.com/platform",
+  "category" : "AI平台官网",
+  "sortOrder" : 5,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 7,
+  "name" : "火山引擎",
+  "description" : "字节跳动云服务平台",
+  "url" : "https://signin.volcengine.com/",
+  "category" : "AI平台官网",
+  "sortOrder" : 6,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 8,
+  "name" : "智谱",
+  "description" : "智谱 AI 开放平台",
+  "url" : "https://open.bigmodel.cn/",
+  "category" : "AI平台官网",
+  "sortOrder" : 7,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 9,
+  "name" : "阿里云百炼",
+  "description" : "阿里云大模型平台",
+  "url" : "https://bailian.console.aliyun.com/",
+  "category" : "AI平台官网",
+  "sortOrder" : 8,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 10,
+  "name" : "英伟达",
+  "description" : "NVIDIA AI 平台",
+  "url" : "https://build.nvidia.com/",
+  "category" : "AI平台官网",
+  "sortOrder" : 9,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 11,
+  "name" : "Nineone AI 网关",
+  "description" : "Openrouter / Freemodel",
+  "url" : "https://nineone.cyou",
+  "category" : "AI平台官网",
+  "sortOrder" : 10,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 12,
+  "name" : "幻城网安公益大模型 API",
+  "description" : "聚合网关",
+  "url" : "https://api.iamhc.cn/pricing",
+  "category" : "AI平台官网",
+  "sortOrder" : 11,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 13,
+  "name" : "DGB 公益站",
+  "description" : "跟新疆平台一样",
+  "url" : "https://freeapi.dgbmc.top/",
+  "category" : "AI平台官网",
+  "sortOrder" : 12,
+  "createdAt" : "2026-07-31T17:53:22.4819475",
+  "updatedAt" : "2026-07-31T17:53:22.4819475"
+}, {
+  "id" : 15,
+  "name" : "Trae",
+  "description" : "AI IDE",
+  "url" : "https://www.trae.com.cn/ide/download",
+  "category" : "AI IDEA",
+  "sortOrder" : 0,
+  "createdAt" : "2026-07-31T18:24:00",
+  "updatedAt" : "2026-07-31T18:24:00"
+}, {
+  "id" : 16,
+  "name" : "Kiro",
+  "description" : "亚马逊云科技 AI IDE",
+  "url" : "https://kiro.dev/downloads/",
+  "category" : "AI IDEA",
+  "sortOrder" : 1,
+  "createdAt" : "2026-07-31T18:24:00",
+  "updatedAt" : "2026-07-31T18:24:00"
+}, {
+  "id" : 17,
+  "name" : "Golutra",
+  "description" : "AI 平台",
+  "url" : "https://www.golutra.com/",
+  "category" : "AI IDEA",
+  "sortOrder" : 2,
+  "createdAt" : "2026-07-31T18:24:00",
+  "updatedAt" : "2026-07-31T18:24:00"
+}, {
+  "id" : 18,
+  "name" : "Qoder",
+  "description" : "AI IDE",
+  "url" : "https://qoder.com/download",
+  "category" : "AI IDEA",
+  "sortOrder" : 3,
+  "createdAt" : "2026-07-31T18:24:00",
+  "updatedAt" : "2026-07-31T18:24:00"
+}, {
+  "id" : 19,
+  "name" : "Tabbit",
+  "description" : "智能浏览器",
+  "url" : "https://www.tabbit-ai.com/",
+  "category" : "AI IDEA",
+  "sortOrder" : 4,
+  "createdAt" : "2026-07-31T18:24:00",
+  "updatedAt" : "2026-07-31T18:24:00"
+}, {
+  "id" : 20,
+  "name" : "可灵Ai",
+  "description" : "AI视频生成",
+  "url" : "https://klingai.com/",
+  "category" : "AI视频平台",
+  "sortOrder" : 0,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 21,
+  "name" : "SeedanceVideo",
+  "description" : "AI视频生成",
+  "url" : "https://seedancevideo.app/",
+  "category" : "AI视频平台",
+  "sortOrder" : 1,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 22,
+  "name" : "海螺 Hailuo",
+  "description" : "AI视频生成平台",
+  "url" : "https://hailuoai.com/",
+  "category" : "AI视频平台",
+  "sortOrder" : 2,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 23,
+  "name" : "通义万相 HappyHorse",
+  "description" : "阿里AI视频生成",
+  "url" : "https://wanxiang.aliyun.com",
+  "category" : "AI视频平台",
+  "sortOrder" : 3,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 24,
+  "name" : "PixVerse",
+  "description" : "AI视频生成",
+  "url" : "https://pixverse.ai",
+  "category" : "AI视频平台",
+  "sortOrder" : 4,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 25,
+  "name" : "123Apps",
+  "description" : "视频处理工具",
+  "url" : "https://123apps.com/",
+  "category" : "AI视频平台",
+  "sortOrder" : 5,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 26,
+  "name" : "Leonardo",
+  "description" : "AI生成",
+  "url" : "https://app.leonardo.ai/",
+  "category" : "AI视频平台",
+  "sortOrder" : 6,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 27,
+  "name" : "Ai video maker",
+  "description" : "AI视频制作",
+  "url" : "https://aivideomaker.ai/zh/pricing",
+  "category" : "AI视频平台",
+  "sortOrder" : 7,
+  "createdAt" : "2026-07-31T18:26:00",
+  "updatedAt" : "2026-07-31T18:26:00"
+}, {
+  "id" : 28,
+  "name" : "Opencode",
+  "description" : "AI 编码代理，终端/桌面/IDE 多端",
+  "url" : "https://opencode.ai/",
+  "category" : "AI客户端",
+  "sortOrder" : 0,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 29,
+  "name" : "Monkeycode",
+  "description" : "云端 AI 开发平台",
+  "url" : "https://monkeycode-ai.com/",
+  "category" : "AI客户端",
+  "sortOrder" : 1,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 30,
+  "name" : "WorkBuddy",
+  "description" : "AI 编码助手",
+  "url" : "https://www.codebuddy.cn/work/",
+  "category" : "AI客户端",
+  "sortOrder" : 2,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 31,
+  "name" : "Hermes",
+  "description" : "Hermes 中文社区",
+  "url" : "https://hermesagent.org.cn/",
+  "category" : "AI客户端",
+  "sortOrder" : 3,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 32,
+  "name" : "Kilo Code",
+  "description" : "千克代码 AI 编码",
+  "url" : "https://kilo.ai/",
+  "category" : "AI客户端",
+  "sortOrder" : 4,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 33,
+  "name" : "Codex++",
+  "description" : "Codex 增强版",
+  "url" : "https://github.com/BigPizzaV3/CodexPlusPlus/releases",
+  "category" : "AI客户端",
+  "sortOrder" : 5,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+}, {
+  "id" : 34,
+  "name" : "Codex",
+  "description" : "OpenAI Codex 编码代理",
+  "url" : "https://github.com/openai/codex/releases",
+  "category" : "AI客户端",
+  "sortOrder" : 6,
+  "createdAt" : "2026-08-03T15:52:00",
+  "updatedAt" : "2026-08-03T15:52:00"
+} ]

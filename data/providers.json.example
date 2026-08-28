@@ -1,0 +1,14 @@
+[ {
+  "id" : 1,
+  "name" : "示例上游供应商",
+  "type" : "OPENAI",
+  "baseUrl" : "https://api.example.com/v1",
+  "apiKey" : "sk-REPLACE_WITH_YOUR_UPSTREAM_API_KEY",
+  "status" : "ACTIVE",
+  "selectedModel" : "auto",
+  "sortOrder" : 0,
+  "healthStatus" : "UNKNOWN",
+  "lastHealthCheck" : null,
+  "createdAt" : null,
+  "updatedAt" : null
+} ]

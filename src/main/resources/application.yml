@@ -1,0 +1,21 @@
+server:
+  port: 8822
+
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  servlet:
+    multipart:
+      # 背景图上传上限；BackgroundService 内还会按 10MB 再校验一次
+      max-file-size: 11MB
+      max-request-size: 13MB
+
+# AI Gateway 自定义配置
+ai-gateway:
+  data-dir: data
+  virtual-models:
+    - model-name: claude-sonnet-4-6
+      context-length: 200000
+      supports-vision: true

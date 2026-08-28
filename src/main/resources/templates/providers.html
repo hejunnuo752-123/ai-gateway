@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Gateway - AI 资源池</title>
+    <link href="/js/bootstrap.min.css?v=2" rel="stylesheet">
+    <link href="/js/bootstrap-icons.css?v=2" rel="stylesheet">
+    <style>
+        [v-cloak] { display: none !important; }
+        .vue-error { color: #ff5252; padding: 20px; text-align: center; }
+        :root {
+            --bg-dark: #05070a;
+            --bg-panel: rgba(10, 16, 30, 0.72);
+            --neon-blue: #00f0ff;
+            --neon-purple: #a855f7;
+            --neon-green: #00e676;
+            --neon-red: #ff5252;
+            --neon-orange: #ffab40;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 240, 255, 0.18);
+        }
+
+        * { scrollbar-width: thin; scrollbar-color: rgba(0,240,255,0.25) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.25); border-radius: 3px; }
+
+        html, body {
+            margin: 0;
+            height: 100vh;
+            background: #020810;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+
+        /* ===== 背景图片（img标签） ===== */
+        .bg-img {
+            position: fixed; inset: 0; z-index: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        /* ===== Sidebar Icon Bar ===== */
+        .app-sidebar {
+            width: 48px;
+            height: 100vh;
+            background: rgba(8, 16, 30, 0.18);
+            border-right: 1px solid rgba(0, 240, 255, 0.14);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 0;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 2px 0 24px rgba(0,0,0,0.12);
+        }
+        .sidebar-logo {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: #fff;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+            margin-bottom: 16px;
+        }
+        .sidebar-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            color: #4a6572;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            text-decoration: none;
+        }
+        .sidebar-icon:hover { color: var(--neon-blue); background: rgba(0,240,255,0.08); }
+        .sidebar-icon.active {
+            color: var(--neon-blue);
+            background: rgba(0,240,255,0.12);
+            box-shadow: inset 0 0 8px rgba(0,240,255,0.15);
+        }
+        .sidebar-icon.active::after {
+            content: '';
+            position: absolute;
+            left: -7px; top: 8px; bottom: 8px;
+            width: 3px;
+            background: var(--neon-blue);
+            border-radius: 0 3px 3px 0;
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+        .sidebar-spacer { flex: 1; }
+        .sidebar-logout:hover { color: var(--neon-red) !important; }
+
+        /* ===== Layout ===== */
+        .app-wrapper {
+            display: flex;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        .dashboard {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 16px;
+            box-sizing: border-box;
+            height: 100vh;
+            overflow: hidden;
+        }
+        @media (max-width: 991.98px) {
+            .app-sidebar { display: none; }
+            .dashboard { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; overflow: auto; }
+        }
+
+        /* ===== Panel (沿用现有风格) ===== */
+        .panel {
+            background: rgba(10, 18, 32, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.22);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            opacity: 0.6;
+        }
+        .panel::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+            opacity: 0.4;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0,240,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.65);
+        }
+        .panel-title i { color: var(--neon-blue); }
+
+        /* ===== Module Header (左侧面板顶部) ===== */
+        .module-header {
+            padding: 18px 20px 6px;
+            border-bottom: 1px solid rgba(0,240,255,0.1);
+            position: relative;
+        }
+        .module-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .module-title { font-size: 1.15rem; font-weight: 700; color: #e0f7ff; text-shadow: 0 1px 6px rgba(0,0,0,0.7); }
+        .module-subtitle { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+        .module-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        /* ===== Buttons (沿用现有风格) ===== */
+        .btn-glow {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            box-shadow: 0 0 8px rgba(0,240,255,0.15);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-glow:hover {
+            background: rgba(0,240,255,0.12);
+            box-shadow: 0 0 16px rgba(0,240,255,0.35);
+            color: #fff;
+        }
+        .btn-primary-glow {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            color: #000;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0,240,255,0.3);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-primary-glow:hover {
+            box-shadow: 0 0 20px rgba(0,240,255,0.5);
+            transform: translateY(-1px);
+        }
+
+        /* ===== Provider List (沿用现有风格) ===== */
+        .provider-list { overflow-y: auto; padding: 12px 16px; flex: 1; }
+        .provider-card {
+            background: rgba(15, 23, 42, 0.18);
+            border: 1px solid rgba(0, 240, 255, 0.12);
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .provider-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--neon-blue);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .provider-card:hover {
+            background: rgba(15, 28, 50, 0.6);
+            border-color: rgba(0,240,255,0.35);
+            box-shadow: 0 0 24px rgba(0,240,255,0.12);
+            transform: translateX(3px);
+        }
+        .provider-card:hover::before { opacity: 1; }
+        .provider-card.active {
+            background: rgba(15, 28, 50, 0.65);
+            border-color: rgba(0,240,255,0.5);
+            box-shadow: 0 0 28px rgba(0,240,255,0.16), inset 0 0 24px rgba(0,240,255,0.04);
+        }
+        .provider-card.active::before { opacity: 1; }
+        .provider-card.error { border-color: rgba(255,82,82,0.35); }
+        .provider-card.error:hover { border-color: rgba(255,82,82,0.6); box-shadow: 0 0 18px rgba(255,82,82,0.12); }
+
+        .provider-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .provider-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+        /* 与 groups.html 组内成员排序按钮保持完全一致 */
+        .btn-mini {
+            background: transparent;
+            border: 1px solid rgba(0,240,255,0.25);
+            color: var(--text-muted);
+            border-radius: 8px;
+            padding: 2px 9px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-mini:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .btn-mini:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            border-color: rgba(0,240,255,0.12);
+            color: #3f4a5a;
+        }
+        /* 必需：不写这条，上面的 :hover 会覆盖禁用态的灰化，禁用按钮悬停仍会亮成蓝色 */
+        .btn-mini:disabled:hover { border-color: rgba(0,240,255,0.12); color: #3f4a5a; }
+        .provider-name { font-weight: 700; color: #fff; font-size: 0.95rem; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+        .provider-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+        .badge-neon {
+            font-size: 0.62rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            border: 1px solid;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        .badge-normal { color: var(--neon-green); border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.08); }
+        .badge-error { color: var(--neon-red); border-color: rgba(255,82,82,0.4); background: rgba(255,82,82,0.08); }
+        .badge-unknown { color: var(--text-muted); border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.06); }
+        .badge-type { color: var(--neon-blue); border-color: rgba(0,240,255,0.3); background: rgba(0,240,255,0.06); }
+        .badge-status { color: var(--neon-purple); border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.06); }
+        .badge-model { color: var(--neon-orange); border-color: rgba(255,171,64,0.3); background: rgba(255,171,64,0.06); }
+        .provider-url { color: var(--text-muted); font-size: 0.72rem; font-family: 'SF Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+        /* ===== Log Panel (沿用现有风格) ===== */
+        .log-toolbar { display: flex; align-items: center; gap: 10px; }
+        .switch-label { color: var(--text-muted); font-size: 0.78rem; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; margin: 0; }
+        .switch-label input { display: none; }
+        .switch-box {
+            width: 36px; height: 18px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 9px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .switch-box::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            transition: all 0.2s;
+        }
+        .switch-label input:checked + .switch-box { background: var(--neon-green); }
+        .switch-label input:checked + .switch-box::after { left: 20px; }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 20px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+        }
+        .log-empty { color: var(--text-muted); text-align: center; padding-top: 80px; }
+
+        .log-group { margin-bottom: 12px; }
+        .log-time { color: var(--neon-blue); opacity: 0.85; margin-bottom: 3px; font-size: 0.78rem; }
+        .log-entry { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+        .log-arrow { color: var(--neon-green); flex-shrink: 0; font-size: 0.75rem; }
+        .log-arrow.error { color: var(--neon-red); }
+        .log-arrow.pending { color: var(--neon-orange); }
+        .log-arrow.completed { color: var(--neon-blue); }
+        .log-content { color: var(--text-main); font-size: 0.78rem; }
+        .log-content .provider { color: var(--neon-purple); font-weight: 600; }
+        .log-content .model { color: var(--neon-blue); }
+        .log-content .metric { color: var(--neon-green); }
+        .log-content .metric.error { color: var(--neon-red); }
+        .log-content .metric.completed { color: var(--neon-blue); }
+
+        /* ===== Modals (沿用现有风格) ===== */
+        .modal-content {
+            background: rgba(8, 18, 32, 0.95);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            color: var(--text-main);
+        }
+        .modal-header { border-bottom: 1px solid rgba(0,240,255,0.12); }
+        .modal-footer { border-top: 1px solid rgba(0,240,255,0.12); }
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0,240,255,0.2);
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 0 0 0.2rem rgba(0,240,255,0.15);
+        }
+
+        /* ===== 霓虹下拉框/输入框 ===== */
+        .neon-select {
+            background: rgba(10, 18, 34, 0.72) !important;
+            border: 1px solid rgba(0, 240, 255, 0.25) !important;
+            color: #e0f7ff !important;
+            border-radius: 10px;
+            padding: 6px 30px 6px 12px;
+            font-size: 0.82rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2300f0ff' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 10px center !important;
+            transition: all 0.2s;
+        }
+        .neon-select:hover {
+            border-color: rgba(0, 240, 255, 0.55) !important;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.12);
+        }
+        .neon-select:focus {
+            background: rgba(12, 24, 44, 0.85) !important;
+            border-color: var(--neon-blue) !important;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+            outline: none;
+        }
+        .neon-select option {
+            background: #0b1424;
+            color: #e0f7ff;
+        }
+        .neon-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .neon-readonly {
+            background: rgba(10, 18, 34, 0.5);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            color: var(--neon-blue);
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-family: monospace;
+            cursor: default;
+        }
+        .neon-placeholder {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            padding: 0.45rem 0.75rem;
+        }
+        .model-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .model-row > .neon-readonly,
+        .model-row > .neon-select {
+            flex: 1;
+            min-width: 0;
+        }
+        .btn-icon-refresh {
+            flex-shrink: 0;
+            width: 38px;
+            background: rgba(10, 18, 34, 0.72);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            color: var(--neon-blue);
+            border-radius: 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-icon-refresh:hover:not(:disabled) {
+            border-color: rgba(0, 240, 255, 0.55);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+            color: #fff;
+        }
+        .btn-icon-refresh:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        .btn-icon-refresh:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .neon-input {
+            background: rgba(10, 18, 34, 0.72) !important;
+            border: 1px solid rgba(0, 240, 255, 0.25) !important;
+            color: #e0f7ff !important;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+        .neon-input:hover {
+            border-color: rgba(0, 240, 255, 0.55) !important;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.12);
+        }
+        .neon-input:focus {
+            background: rgba(12, 24, 44, 0.85) !important;
+            border-color: var(--neon-blue) !important;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+            outline: none;
+        }
+        .btn-neon-outline {
+            background: rgba(10, 18, 34, 0.72);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            color: #e0f7ff;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+        .btn-neon-outline:hover:not(:disabled) {
+            border-color: rgba(0, 240, 255, 0.55);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.12);
+            color: var(--neon-blue);
+        }
+        .btn-neon-outline:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .form-label { color: var(--text-muted); font-size: 0.85rem; }
+        .btn-close { filter: invert(1); }
+
+        .model-list-box {
+            background: rgba(8, 12, 28, 0.5);
+            border: 1px solid rgba(0, 200, 255, 0.25);
+            border-radius: 8px;
+            padding: 0 12px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .model-row { border-bottom: 1px dashed rgba(0, 200, 255, 0.15); }
+        .model-row:last-child { border-bottom: none; }
+        .model-name-text {
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.08);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast { background: rgba(10,16,30,0.95) !important; border: 1px solid var(--border-color) !important; color: #fff !important; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+        .conn-status { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .conn-connected { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        .conn-disconnected { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+        .conn-connecting { background: var(--neon-orange); box-shadow: 0 0 8px var(--neon-orange); }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <img class="bg-img" th:src="${bgUrl}" src="/images/platform-bg.jpg" alt="">
+
+
+    <div class="app-wrapper">
+        <!-- Left: Icon Sidebar -->
+        <nav class="app-sidebar">
+            <div class="sidebar-logo" title="AI Gateway">AI</div>
+            <a class="sidebar-icon active" href="/" title="AI 资源池">
+                <i class="bi bi-grid-1x2"></i>
+            </a>
+            <a class="sidebar-icon" href="/ai-platforms" title="AI 平台导航">
+                <i class="bi bi-window"></i>
+            </a>
+            <a class="sidebar-icon" href="/groups" title="资源池分组">
+                <i class="bi bi-diagram-3"></i>
+            </a>
+            <a class="sidebar-icon" @click.prevent="void(0)" title="功能模块三">
+                <i class="bi bi-graph-up"></i>
+            </a>
+            <div class="sidebar-spacer"></div>
+            <a class="sidebar-icon" @click="showConnectionInfo" title="API KEY">
+                <i class="bi bi-key"></i>
+            </a>
+            <a class="sidebar-icon" onclick="openSettingsModal()" title="设置">
+                <i class="bi bi-gear"></i>
+            </a>
+            <a class="sidebar-icon sidebar-logout" @click="doLogout" title="退出登录">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="dashboard">
+            <!-- Left Panel: AI Platform Management -->
+            <section class="panel">
+                <div class="module-header">
+                    <div class="module-header-inner">
+                        <div>
+                            <div class="module-title">{{ activeMenuTitle }}</div>
+                            <div class="module-subtitle">{{ activeMenuSubtitle }}</div>
+                        </div>
+                        <div class="module-actions">
+                            <button class="btn-glow" @click="openAddProvider">
+                                <i class="bi bi-plus-lg me-1"></i>添加平台
+                            </button>
+                            <button class="btn-glow" @click="showConnectionInfo">
+                                <i class="bi bi-key me-1"></i>API KEY
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="provider-list">
+                    <div v-if="providers.length === 0" class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>还没有添加任何平台</p>
+                        <button class="btn-primary-glow" @click="openAddProvider">添加第一个平台</button>
+                    </div>
+                    <div v-for="(p, idx) in providers" :key="p.id"
+                         :class="['provider-card', selectedProviderId === p.id ? 'active' : '', p.healthStatus === 'ERROR' ? 'error' : '']"
+                         @click="selectProvider(p)">
+                        <div class="provider-header">
+                            <div>
+                                <div class="provider-name">{{ p.name }}</div>
+                                <div class="provider-url" :title="p.baseUrl">{{ p.baseUrl }}</div>
+                            </div>
+                            <div class="provider-actions">
+                                <button class="btn-mini" @click.stop="moveProvider(idx, -1)"
+                                        :disabled="idx === 0 || reordering" title="上移（提前调用顺序）">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                                <button class="btn-mini" @click.stop="moveProvider(idx, 1)"
+                                        :disabled="idx === providers.length - 1 || reordering" title="下移（延后调用顺序）">
+                                    <i class="bi bi-arrow-down"></i>
+                                </button>
+                                <button class="btn btn-link btn-sm text-info p-0 ms-1" @click.stop="editProvider(p)" title="编辑">
+                                    <i class="bi bi-pencil-square" style="font-size:1rem;"></i>
+                                </button>
+                                <button class="btn btn-link btn-sm text-danger p-0" @click.stop="deleteProvider(p)" title="删除">
+                                    <i class="bi bi-trash" style="font-size:1rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="provider-badges">
+                            <span :class="['badge-neon', healthBadgeClass(p.healthStatus)]" :title="healthTitle(p)">
+                                {{ healthLabel(p.healthStatus) }}
+                            </span>
+                            <span class="badge-neon badge-type">{{ p.type }}</span>
+                            <span class="badge-neon badge-status">{{ p.status }}</span>
+                            <span class="badge-neon badge-status"
+                                  :title="'内部轮询序号 ' + (p.sortOrder != null ? p.sortOrder : 0)">
+                                第 {{ idx + 1 }} 个调用
+                            </span>
+                            <span v-if="p.selectedModel" class="badge-neon badge-model" :title="p.selectedModel">
+                                {{ p.selectedModel.length > 22 ? p.selectedModel.substring(0,22)+'...' : p.selectedModel }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Real-time Logs -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="bi bi-broadcast"></i>实时调用日志</div>
+                    <div class="log-toolbar">
+                        <span class="small" :title="logStatusText">
+                            <span class="conn-status" :class="connClass"></span>
+                            <span class="text-muted" style="font-size:0.75rem;">{{ logStatus }}</span>
+                        </span>
+                        <label class="switch-label">
+                            <input type="checkbox" v-model="autoScroll" />
+                            <span class="switch-box"></span>
+                            自动滚动
+                        </label>
+                        <button class="btn btn-sm btn-outline-info" @click="clearLogs" style="border-radius:12px;font-size:0.72rem;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="log-body" ref="logBody">
+                    <div v-if="logEntries.length === 0" class="log-empty">
+                        <i class="bi bi-journal-text" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                        等待日志数据...
+                    </div>
+                    <div v-for="(group, idx) in groupedLogs" :key="idx" class="log-group">
+                        <div class="log-time">[ {{ group.time }} ]</div>
+                        <div v-for="(entry, eidx) in group.entries" :key="eidx" class="log-entry">
+                            <i class="bi bi-chevron-right log-arrow" :class="entry.type"></i>
+                            <div class="log-content">
+                                <span v-if="entry.provider" class="provider">{{ entry.provider }}</span>
+                                <span v-if="entry.model"> | <span class="model">{{ entry.model }}</span></span>
+                                <span v-if="entry.duration != null"> | 耗时 <span class="metric" :class="entry.type">{{ entry.duration }}ms</span></span>
+                                <span v-if="entry.tokens != null"> | token <span class="metric">{{ entry.tokens }}</span></span>
+                                <span v-if="entry.status"> | <span class="metric" :class="entry.type">{{ entry.status }}</span></span>
+                                <span v-if="entry.raw && !entry.provider">{{ entry.raw }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Connection Info Modal -->
+    <div class="modal fade" id="connectionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key me-2"></i>API KEY 获取</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Base URL</label>
+                        <div class="input-group">
+                            <input class="form-control font-monospace small" :value="connectionInfo.baseUrl" readonly ref="baseUrlInput" />
+                            <button class="btn btn-outline-secondary" @click="copyToClipboard(connectionInfo.baseUrl, 'baseUrl')" title="复制">
+                                <i :class="copied.baseUrl ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key（固定）</label>
+                        <div class="input-group">
+                            <input class="form-control font-monospace small" :value="connectionInfo.apiKey" readonly ref="apiKeyInput" :type="showApiKey ? 'text' : 'password'" />
+                            <button class="btn btn-outline-secondary" @click="showApiKey = !showApiKey" title="显示/隐藏">
+                                <i :class="showApiKey ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" @click="copyToClipboard(connectionInfo.apiKey, 'apiKey')" title="复制">
+                                <i :class="copied.apiKey ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label mb-0">可用模型</label>
+                            <button class="btn btn-sm btn-outline-secondary" v-if="virtualModels.length"
+                                    @click="copyAllModels" title="复制全部">
+                                <i :class="copied.allModels ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                                <span class="ms-1 small">全部复制</span>
+                            </button>
+                        </div>
+                        <div class="model-list-box">
+                            <div v-if="virtualModels.length === 0" class="text-muted small py-2 text-center">
+                                暂无可用模型
+                            </div>
+                            <div v-for="(m, idx) in virtualModels" :key="idx"
+                                 class="model-row d-flex align-items-center gap-2 py-2">
+                                <code class="model-name-text flex-grow-1">{{ m.id }}</code>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        @click="copyToClipboard(m.id, 'model-'+idx)" title="复制">
+                                    <i :class="copied['model-'+idx] ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">客户端使用此 Base URL + API Key 即可连接网关</small>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Provider Modal -->
+    <div class="modal fade" id="providerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ editingProvider ? '编辑平台' : '添加平台' }}</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">平台名称</label>
+                            <input class="form-control" v-model="form.name" placeholder="如 NVIDIA、vLLM、商汤" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">平台类型</label>
+                            <select class="form-select" v-model="form.type">
+                                <option value="OPENAI">OPENAI（OpenAI 兼容，可自动获取模型列表）</option>
+                                <option value="NATIVE">NATIVE（原生 API，需手动添加模型）</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Base URL</label>
+                        <input class="form-control" v-model="form.baseUrl" placeholder="https://api.example.com/v1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key</label>
+                        <input class="form-control" v-model="form.apiKey" placeholder="sk-xxx..." :type="showKey ? 'text' : 'password'" />
+                        <div class="form-check form-check-inline mt-2">
+                            <input class="form-check-input" type="checkbox" v-model="showKey" id="showKey" />
+                            <label class="form-check-label small" for="showKey">显示</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">调用顺序</label>
+                        <div class="neon-readonly">
+                            <span v-if="editingProvider">
+                                当前第 {{ currentOrderText }} 位，可在左侧列表用 ↑ ↓ 箭头调整
+                            </span>
+                            <span v-else>新增平台将排在列表末尾，之后可用 ↑ ↓ 箭头调整</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">默认模型</label>
+                        <div class="model-row">
+                            <div v-if="form.selectedModel && previewModels.length === 0" class="neon-readonly flex-grow-1">
+                                {{ form.selectedModel }}
+                            </div>
+                            <select v-else-if="previewModels.length > 0" class="neon-select flex-grow-1" v-model="form.selectedModel">
+                                <option value="">选择模型</option>
+                                <option v-for="m in previewModels" :key="m" :value="m">{{ m }}</option>
+                            </select>
+                            <div v-else class="neon-placeholder flex-grow-1">请先获取模型</div>
+                            <button class="btn-icon-refresh" type="button" @click="previewFetchModels"
+                                    :disabled="previewFetching || form.type !== 'OPENAI' || !form.baseUrl.trim()"
+                                    :title="previewFetching ? '获取中...' : '获取/刷新模型列表'">
+                                <span v-if="previewFetching" class="spinner-border spinner-border-sm"></span>
+                                <i v-else class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        <input v-if="form.type === 'NATIVE'" class="neon-input mt-2" v-model="form.selectedModel" placeholder="如 gpt-4o、deepseek-chat" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-danger me-auto" v-if="editingProvider" @click="deleteProvider(editingProvider); providerModal.hide();">
+                        <i class="bi bi-trash me-1"></i>删除平台
+                    </button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button class="btn btn-primary" @click="saveProvider" :disabled="saving">{{ saving ? '保存中...' : '保存' }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/vue.global.prod.js?v=2"></script>
+<script src="/js/bootstrap.bundle.min.js?v=2"></script>
+<script src="/js/settings-modal.js?v=1"></script>
+<script th:inline="none">
+window.onerror = function(msg, url, line) {
+    console.error('[APP ERROR]', msg, 'at', url, 'line', line);
+    document.body.innerHTML = '<div class="vue-error"><h3>页面加载出错</h3><p>' + msg + '</p><p>位置: ' + (url || '') + ':' + line + '</p><p>请尝试 Ctrl+F5 强制刷新</p></div>';
+};
+
+try {
+    if (typeof Vue === 'undefined') {
+        throw new Error('Vue 库未能加载，请检查网络或静态资源 /js/vue.global.prod.js 是否可访问');
+    }
+    console.log('[APP] Vue loaded:', Vue.version);
+} catch (e) {
+    document.body.innerHTML = '<div class="vue-error"><h3>Vue 加载失败</h3><p>' + e.message + '</p><p>请按 Ctrl+F5 强制刷新</p></div>';
+    throw e;
+}
+
+/* 会话过期兜底：任何管理接口返回 401 就回登录页，避免页面停在空白态 */
+(function () {
+    const origFetch = window.fetch;
+    window.fetch = async function (...args) {
+        const resp = await origFetch.apply(this, args);
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+        if (resp.status === 401 && url.startsWith('/api/') && !url.startsWith('/api/auth/')) {
+            window.location.href = '/login';
+        }
+        return resp;
+    };
+})();
+
+const { createApp, ref, reactive, computed, nextTick, onMounted, onUnmounted } = Vue;
+
+createApp({
+    setup() {
+        // Menu
+        const activeMenuTitle = 'AI 资源池';
+        const activeMenuSubtitle = '管理多个 AI 服务接入点与模型配置';
+
+        // Providers
+        const providers = ref([]);
+        const selectedProviderId = ref(null);
+        const editingProvider = ref(null);
+        const toasts = ref([]);
+        const saving = ref(false);
+        const showKey = ref(false);
+        const reordering = ref(false);
+
+        const form = reactive({ name: '', type: 'OPENAI', baseUrl: '', apiKey: '', selectedModel: '', sortOrder: 0 });
+
+        const connectionInfo = reactive({ baseUrl: '', apiKey: 'sk-vq5zqQQQxCPN3r' });
+        const copied = reactive({ baseUrl: false, apiKey: false, allModels: false });
+        const showApiKey = ref(false);
+        const virtualModels = ref([
+            { id: 'claude-sonnet-4-6' }
+        ]);
+
+        const previewModels = ref([]);
+        const previewFetching = ref(false);
+
+        let providerModal, connectionModal;
+
+        // Logs
+        const logEntries = ref([]);
+        const autoScroll = ref(true);
+        const logStatus = ref('连接中');
+        const logBody = ref(null);
+        let evtSource = null;
+
+        const connClass = computed(() => {
+            if (logStatus.value === '已连接') return 'conn-connected';
+            if (logStatus.value === '连接中') return 'conn-connecting';
+            return 'conn-disconnected';
+        });
+        const logStatusText = computed(() => logStatus.value);
+
+        const selectedProvider = computed(() =>
+            providers.value.find(p => p.id === selectedProviderId.value) || null
+        );
+
+        // 编辑弹窗里展示的排位，取列表实际下标而不是 sortOrder 原始值
+        const currentOrderText = computed(() => {
+            if (!editingProvider.value) return '-';
+            const i = providers.value.findIndex(p => p.id === editingProvider.value.id);
+            return i < 0 ? '-' : (i + 1);
+        });
+
+        const groupedLogs = computed(() => {
+            const groups = [];
+            let lastTime = null;
+            let current = null;
+            for (const entry of logEntries.value) {
+                if (entry.time !== lastTime) {
+                    current = { time: entry.time, entries: [] };
+                    groups.push(current);
+                    lastTime = entry.time;
+                }
+                current.entries.push(entry);
+            }
+            return groups;
+        });
+
+        onMounted(() => {
+            providerModal = new bootstrap.Modal('#providerModal');
+            connectionModal = new bootstrap.Modal('#connectionModal');
+            loadProviders();
+            connectLogs();
+        });
+
+        onUnmounted(() => {
+            if (evtSource) evtSource.close();
+        });
+
+        // ===== Logs =====
+        function connectLogs() {
+            if (evtSource) evtSource.close();
+            logStatus.value = '连接中';
+            evtSource = new EventSource('/api/logs/forward?lastLines=100');
+            evtSource.onopen = () => { logStatus.value = '已连接'; };
+            evtSource.onmessage = (e) => {
+                parseLogLine(e.data);
+                if (autoScroll.value) scrollToBottom();
+            };
+            evtSource.onerror = () => {
+                logStatus.value = '已断开';
+                setTimeout(connectLogs, 3000);
+            };
+        }
+
+        function parseLogLine(line) {
+            const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+            const time = tsMatch ? tsMatch[1].split(' ')[1] : '--:--:--';
+            let entry = { time, raw: line, type: 'pending' };
+
+            const successMatch = line.match(/\[(FWD|FWD-STREAM)\] ✅ 调用成功 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\)/);
+            if (successMatch) {
+                entry = {
+                    time,
+                    type: 'success',
+                    provider: successMatch[4],
+                    status: '调用成功'
+                };
+            }
+
+            const okMatch = line.match(/\[(FWD|FWD-STREAM)\] ✅ 成功 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\) \| 耗时=(\d+)ms \| token=(\d+)/);
+            if (okMatch) {
+                entry = {
+                    time,
+                    type: 'completed',
+                    provider: okMatch[4],
+                    duration: parseInt(okMatch[6]),
+                    tokens: parseInt(okMatch[7]),
+                    status: '调用成功'
+                };
+            }
+
+            const completeMatch = line.match(/\[(FWD|FWD-STREAM)\] ✅任务完成 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\) \| 耗时=(\d+)ms \| token=(\d+)/);
+            if (completeMatch) {
+                entry = {
+                    time,
+                    type: 'completed',
+                    provider: completeMatch[4],
+                    duration: completeMatch[6] ? parseInt(completeMatch[6]) : null,
+                    tokens: completeMatch[7] ? parseInt(completeMatch[7]) : null,
+                    status: '✅任务完成'
+                };
+            }
+
+            const attemptMatch = line.match(/\[(FWD|FWD-STREAM)\] 尝试 \[(\d+)\/(\d+)\] 平台=([^(,]+).*虚拟模型=([^\s]+) -> 上游模型=([^\s]+)/);
+            if (attemptMatch) {
+                entry = {
+                    time,
+                    type: 'pending',
+                    provider: attemptMatch[4],
+                    model: attemptMatch[6],
+                    status: '连接检测中'
+                };
+            }
+
+            const failMatch = line.match(/\[(FWD|FWD-STREAM)\] ❌ 失败 \[(\d+)\/(\d+)\] 平台=([^()]+)\(id=([^)]+)\): (.+)/);
+            if (failMatch) {
+                entry = {
+                    time,
+                    type: 'error',
+                    provider: failMatch[4],
+                    status: '调用失败: ' + failMatch[6]
+                };
+            }
+
+            const routeMatch = line.match(/\[ROUTE\] 虚拟模型 '([^']+)' → 轮询 (\d+) 个平台/);
+            if (routeMatch) {
+                entry = { time, type: 'pending', model: routeMatch[1], status: '路由到 ' + routeMatch[2] + ' 个平台' };
+            }
+
+            const healthMatch = line.match(/\[HEALTH\] 平台=([^()]+)\(id=([^)]+)\) 状态更新为 (\w+)/);
+            if (healthMatch) {
+                entry = { time, type: healthMatch[3] === 'ERROR' ? 'error' : 'success', provider: healthMatch[1], status: '健康状态: ' + healthMatch[3] };
+            }
+
+            logEntries.value.push(entry);
+            if (logEntries.value.length > 500) {
+                logEntries.value = logEntries.value.slice(logEntries.value.length - 500);
+            }
+        }
+
+        function scrollToBottom() {
+            nextTick(() => {
+                if (logBody.value) logBody.value.scrollTop = logBody.value.scrollHeight;
+            });
+        }
+
+        function clearLogs() { logEntries.value = []; }
+
+        // ===== Providers =====
+        async function loadProviders() {
+            const res = await fetch('/api/providers');
+            const json = await res.json();
+            if (json.code === 200) {
+                providers.value = json.data;
+                if (selectedProviderId.value && !providers.value.find(p => p.id === selectedProviderId.value)) {
+                    selectedProviderId.value = providers.value.length > 0 ? providers.value[0].id : null;
+                }
+                if (!selectedProviderId.value && providers.value.length > 0) {
+                    selectedProviderId.value = providers.value[0].id;
+                }
+            }
+        }
+
+        function selectProvider(p) { selectedProviderId.value = p.id; }
+
+        /**
+         * 上移 / 下移一个平台，直接改变旧 /v1 链路的轮询顺序。
+         * delta = -1 上移，+1 下移。
+         */
+        async function moveProvider(index, delta) {
+            const target = index + delta;
+            if (target < 0 || target >= providers.value.length) return;
+            if (reordering.value) return;          // 连点防抖，避免并发请求乱序
+            reordering.value = true;
+
+            const ids = providers.value.map(p => p.id);
+            [ids[index], ids[target]] = [ids[target], ids[index]];
+
+            // 乐观更新：箭头点下去立刻有反馈，不等网络往返
+            const arr = providers.value.slice();
+            [arr[index], arr[target]] = [arr[target], arr[index]];
+            providers.value = arr;
+
+            try {
+                const res = await fetch('/api/providers/order', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ providerIds: ids })
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    providers.value = json.data;   // 用服务端结果对齐，顺带拿到规整后的 sortOrder
+                } else {
+                    toast(json.message || '排序失败');
+                    await loadProviders();         // 回滚到服务端真实状态
+                }
+            } catch (e) {
+                toast('排序失败：' + e.message);
+                await loadProviders();
+            } finally {
+                reordering.value = false;
+            }
+        }
+
+        function toast(msg) {
+            toasts.value.push(msg);
+            setTimeout(() => toasts.value.shift(), 3000);
+        }
+
+        function openAddProvider() {
+            editingProvider.value = null;
+            form.name = ''; form.type = 'OPENAI'; form.baseUrl = ''; form.apiKey = '';
+            form.selectedModel = ''; form.sortOrder = null;
+            showKey.value = false;
+            previewModels.value = [];
+            providerModal.show();
+        }
+
+        function editProvider(p) {
+            editingProvider.value = p;
+            form.name = p.name; form.type = p.type; form.baseUrl = p.baseUrl;
+            form.apiKey = p.apiKey || ''; form.selectedModel = p.selectedModel || '';
+            form.sortOrder = p.sortOrder != null ? p.sortOrder : null;
+            showKey.value = false;
+            previewModels.value = [];
+            providerModal.show();
+        }
+
+        async function saveProvider() {
+            if (!form.name.trim() || !form.baseUrl.trim()) {
+                toast('请填写平台名称和 Base URL');
+                return;
+            }
+            saving.value = true;
+            try {
+                const body = {
+                    name: form.name.trim(), type: form.type, baseUrl: form.baseUrl.trim(),
+                    apiKey: form.apiKey.trim(), selectedModel: form.selectedModel ? form.selectedModel.trim() : '',
+                    // 编辑时原样带回已有序号（排序权归列表箭头，弹窗不再改它）；
+                    // 新增时传 null，由后端置为「当前最大值 + 1」排到末尾
+                    sortOrder: editingProvider.value
+                        ? (editingProvider.value.sortOrder != null ? editingProvider.value.sortOrder : null)
+                        : null
+                };
+                let res;
+                if (editingProvider.value) {
+                    res = await fetch(`/api/providers/${editingProvider.value.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                } else {
+                    res = await fetch('/api/providers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                }
+                const json = await res.json();
+                if (json.code === 200) {
+                    providerModal.hide();
+                    await loadProviders();
+                    if (!editingProvider.value && json.data && json.data.id) {
+                        selectedProviderId.value = json.data.id;
+                    }
+                    toast(editingProvider.value ? '平台已更新' : '平台已添加');
+                } else {
+                    toast(json.message || '保存失败');
+                }
+            } catch (e) {
+                toast('保存失败: ' + e.message);
+            } finally {
+                saving.value = false;
+            }
+        }
+
+        async function deleteProvider(p) {
+            if (!confirm(`确定删除平台 "${p.name}" 及其所有模型？`)) return;
+            const res = await fetch(`/api/providers/${p.id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.code === 200) {
+                await loadProviders();
+                toast('平台已删除');
+            }
+        }
+
+        async function previewFetchModels() {
+            if (!form.baseUrl.trim()) { toast('请先填写 Base URL'); return; }
+            previewFetching.value = true;
+            try {
+                const body = { name: form.name || 'temp', type: form.type, baseUrl: form.baseUrl.trim(), apiKey: form.apiKey.trim() };
+                const res = await fetch('/api/providers/preview-models', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const json = await res.json();
+                if (json.code === 200) {
+                    previewModels.value = json.data;
+                    toast(json.data.length ? `成功获取 ${json.data.length} 个模型` : '未获取到模型');
+                } else {
+                    toast(json.message || '获取失败');
+                }
+            } catch (e) {
+                toast('获取模型失败: ' + e.message);
+            } finally {
+                previewFetching.value = false;
+            }
+        }
+
+        async function showConnectionInfo() {
+            connectionModal.show();
+            try {
+                const res = await fetch('/api/server-info');
+                const json = await res.json();
+                if (json && json.baseUrl) connectionInfo.baseUrl = json.baseUrl + '/v1';
+            } catch (e) {
+                connectionInfo.baseUrl = window.location.origin + '/v1';
+            }
+        }
+
+        async function copyToClipboard(text, key) {
+            try {
+                await navigator.clipboard.writeText(text);
+                copied[key] = true;
+                setTimeout(() => copied[key] = false, 2000);
+            } catch (e) {
+                const inputs = document.querySelectorAll('#connectionModal input[readonly]');
+                const el = key === 'baseUrl' ? inputs[0] : inputs[1];
+                if (el) { el.select(); document.execCommand('copy'); copied[key] = true; setTimeout(() => copied[key] = false, 2000); }
+            }
+        }
+
+        async function copyAllModels() {
+            const text = virtualModels.value.map(m => m.id).join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                copied.allModels = true;
+                setTimeout(() => copied.allModels = false, 2000);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                copied.allModels = true;
+                setTimeout(() => copied.allModels = false, 2000);
+            }
+        }
+
+        // ===== Health =====
+        function healthBadgeClass(status) {
+            if (status === 'NORMAL') return 'badge-normal';
+            if (status === 'ERROR') return 'badge-error';
+            return 'badge-unknown';
+        }
+        function healthLabel(status) {
+            if (status === 'NORMAL') return '正常';
+            if (status === 'ERROR') return '异常';
+            return '未调用';
+        }
+        function healthTitle(p) {
+            let t = '健康状态: ' + healthLabel(p.healthStatus);
+            if (p.lastHealthCheck) t += '\n最后检测: ' + formatHealthCheck(p.lastHealthCheck);
+            else t += '\n尚未调用过';
+            return t;
+        }
+        function formatHealthCheck(dt) {
+            if (!dt) return '';
+            const d = new Date(dt);
+            const pad = n => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+
+        /** 退出登录：清 Cookie 后回登录页 */
+        async function doLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) { /* 忽略网络异常，仍然跳转 */ }
+            window.location.href = '/login';
+        }
+
+        return {
+            activeMenuTitle, activeMenuSubtitle,
+            providers, selectedProviderId, editingProvider,
+            toasts, saving, showKey, reordering,
+            form, previewModels, previewFetching,
+            connectionInfo, copied, showApiKey, virtualModels,
+            selectedProvider, currentOrderText,
+            logEntries, groupedLogs, autoScroll, logStatus, logStatusText, connClass, logBody,
+            selectProvider, openAddProvider, editProvider, saveProvider, deleteProvider,
+            moveProvider,
+            previewFetchModels,
+            showConnectionInfo, copyToClipboard, copyAllModels,
+            healthBadgeClass, healthLabel, healthTitle, formatHealthCheck,
+            clearLogs, doLogout
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
